@@ -34,7 +34,7 @@ export const MCF_OPTIONS = [
   { value: "Gerenciado", mcf: 1.0 },
   { value: "Não gerenciado - profundo (>=5 m)", mcf: 0.8 },
   { value: "Não gerenciado - raso (<5 m)", mcf: 0.4 },
-  { value: "Não categorizado", mcf: 0.6 },
+  { value: "Não categorizado", mcf: 0.6, label: "Não categorizado (aterro controlado/lixão)" },
 ];
 
 // Rótulos de versões anteriores, ainda presentes em cenários salvos.
@@ -43,6 +43,21 @@ const LEGACY_MCF = {
   "Não gerenciado": 0.4,
   "Nao gerenciado": 0.4,
 };
+
+// k padrão para resíduo misto (bulk waste), IPCC 2006 Vol. 5 Tab. 3.3 (mantida no
+// Refinamento 2019). Zona definida pela temperatura média anual do ar (MAT) e
+// precipitação (MAP); o Inventário Nacional (4ª Comunicação) classifica cada município
+// assim e não há clima temperado seco no Brasil.
+export const CLIMATE_ZONES = [
+  { value: "Tropical úmido", k: 0.17, criterio: "MAT > 20 °C e MAP ≥ 1000 mm" },
+  { value: "Tropical seco", k: 0.065, criterio: "MAT > 20 °C e MAP < 1000 mm" },
+  { value: "Temperado úmido", k: 0.09, criterio: "MAT ≤ 20 °C e MAP/PET > 1" },
+  { value: "Temperado seco", k: 0.05, criterio: "MAT ≤ 20 °C e MAP/PET < 1" },
+];
+
+export function climateZoneForK(k) {
+  return CLIMATE_ZONES.find((z) => Math.abs(z.k - Number(k)) < 1e-9)?.value || "";
+}
 
 export function resolveMcf(gerenciamento) {
   const found = MCF_OPTIONS.find((o) => o.value === gerenciamento);

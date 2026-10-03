@@ -17,6 +17,7 @@ import L from "leaflet";
 import { useDashboard } from "../context/DashboardContext.jsx";
 import { fetchLandfillCalculation } from "../utils/landfillCalcApi.js";
 import { DEFAULT_ANO_FINAL, normalizeLandfillConfig } from "../utils/landfillModel.js";
+import { fmtAxis, yearTicks } from "../utils/chartFormat.js";
 import "../styles/Energy.css";
 
 
@@ -739,16 +740,9 @@ export default function Energy() {
   );
 
   const comparisonTicks = useMemo(
-    () => comparisonAreaData.map((point) => point.ano),
-    [comparisonAreaData]
+    () => yearTicks(comparisonAreaData.map((point) => point.ano), isMobile ? 6 : 14),
+    [comparisonAreaData, isMobile]
   );
-
-  const comparisonTickInterval = useMemo(() => {
-    const total = comparisonTicks.length;
-    if (total <= 14) return 0;
-    const targetTicks = isMobile ? 8 : 14;
-    return Math.max(0, Math.ceil(total / targetTicks) - 1);
-  }, [comparisonTicks, isMobile]);
 
   const homesComparisonData = useMemo(
     () =>
@@ -798,13 +792,10 @@ export default function Energy() {
     [annualHomesData, selectedYear]
   );
 
-  const homesTicks = useMemo(() => homesChartData.map((point) => point.ano), [homesChartData]);
-  const homesTickInterval = useMemo(() => {
-    const total = homesTicks.length;
-    if (total <= 14) return 0;
-    const targetTicks = isMobile ? 8 : 14;
-    return Math.max(0, Math.ceil(total / targetTicks) - 1);
-  }, [homesTicks, isMobile]);
+  const homesTicks = useMemo(
+    () => yearTicks(homesChartData.map((point) => point.ano), isMobile ? 6 : 14),
+    [homesChartData, isMobile]
+  );
 
   const cityAxisWidth = useMemo(() => {
     const maxChars = cityEnergyData.reduce((maxLen, row) => Math.max(maxLen, row.nome.length), 0);
@@ -1113,7 +1104,7 @@ export default function Energy() {
                   <XAxis
                     dataKey="ano"
                     tickMargin={8}
-                    interval={comparisonTickInterval}
+                    interval={0}
                     ticks={comparisonTicks}
                     tick={{ fill: "#1b3c2e", fontSize: isMobile ? 10 : 11 }}
                     tickLine={{ stroke: "#dfe9e3" }}
@@ -1121,8 +1112,8 @@ export default function Energy() {
                   />
                   <YAxis
                     domain={["auto", "auto"]}
-                    width={isMobile ? 70 : 90}
-                    tickFormatter={(v) => fmtMwh(v)}
+                    width={isMobile ? 56 : 64}
+                    tickFormatter={fmtAxis}
                     tick={{ fill: "#1b3c2e", fontSize: isMobile ? 10 : 11 }}
                     tickLine={{ stroke: "#dfe9e3" }}
                     axisLine={{ stroke: "#dfe9e3" }}
@@ -1294,7 +1285,7 @@ export default function Energy() {
                     <CartesianGrid stroke="#edf3ee" strokeDasharray="3 3" horizontal={false} />
                     <XAxis
                       type="number"
-                      tickFormatter={(v) => fmtMwh(v)}
+                      tickFormatter={fmtAxis}
                       tick={{ fill: "#1b3c2e", fontSize: isMobile ? 10 : 11 }}
                       tickLine={{ stroke: "#dfe9e3" }}
                       axisLine={{ stroke: "#dfe9e3" }}
@@ -1388,15 +1379,15 @@ export default function Energy() {
                     <XAxis
                       dataKey="ano"
                       tickMargin={8}
-                      interval={homesTickInterval}
+                      interval={0}
                       ticks={homesTicks}
                       tick={{ fill: "#1b3c2e", fontSize: isMobile ? 10 : 11 }}
                       tickLine={{ stroke: "#dfe9e3" }}
                       axisLine={{ stroke: "#dfe9e3" }}
                     />
                     <YAxis
-                      tickFormatter={(v) => fmtInt(v)}
-                      width={isMobile ? 70 : 90}
+                      tickFormatter={fmtAxis}
+                      width={isMobile ? 56 : 64}
                       tick={{ fill: "#1b3c2e", fontSize: isMobile ? 10 : 11 }}
                       tickLine={{ stroke: "#dfe9e3" }}
                       axisLine={{ stroke: "#dfe9e3" }}

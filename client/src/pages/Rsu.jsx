@@ -2,12 +2,15 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import "../styles/Rsu.css";
 import { ResponsiveLine } from "@nivo/line";
 import { useDashboard } from "../context/DashboardContext.jsx";
-import { calcRsuTonAno } from "../utils/rsuProduction.js";
+import { calcRsuTonAno, getPerCapKgByRegionYear } from "../utils/rsuProduction.js";
+import { fmtAxis, fmtNumber, yearTicks } from "../utils/chartFormat.js";
 import {
   DEFAULT_ANO_FINAL,
   DEFAULT_ANO_INICIAL,
   DEFAULT_COMPOSICAO,
+  CLIMATE_ZONES,
   MCF_OPTIONS,
+  climateZoneForK,
   computeLoTonPerTon,
 } from "../utils/landfillModel.js";
 
@@ -48,7 +51,6 @@ function makeDefaultDraft() {
 
     // Produção
     captacaoBiogasPct: 100,
-    tempAnaerobicaC: null,
     gerenciamento: "Gerenciado",
     kMetano: 0.05,
 
@@ -84,7 +86,6 @@ function isDefaultConfig(config) {
     Number(config.vidaInicio) === base.vidaInicio &&
     Number(config.vidaFim) === base.vidaFim &&
     Number(config.captacaoBiogasPct) === base.captacaoBiogasPct &&
-    Number(config.tempAnaerobicaC) === base.tempAnaerobicaC &&
     Number(config.kMetano) === base.kMetano &&
     String(config.gerenciamento) === base.gerenciamento &&
     Number(config.popBase) === base.popBase &&
@@ -372,7 +373,6 @@ export default function Rsu() {
       vidaInicio,
       vidaFim,
       captacaoBiogasPct: clampNum(draft.captacaoBiogasPct, 0, 100),
-      tempAnaerobicaC: clampNum(draft.tempAnaerobicaC, -50, 500),
       kMetano: clampNum(draft.kMetano, 0, 10),
       popBase: clampNum(draft.popBase, 0, 1e9),
       popCrescimentoAnualPct: clampNum(draft.popCrescimentoAnualPct, -10, 20),
@@ -400,7 +400,8 @@ export default function Rsu() {
         populacao: pop,
         fallbackKgAnoHab: model.geracaoKgAnoHab,
       });
-      return { ano, pop, rsuTAno };
+      const perCapita = getPerCapKgByRegionYear(model.regiao, ano, model.geracaoKgAnoHab);
+      return { ano, pop, rsuTAno, perCapita };
     });
 
     const nivo = [
@@ -410,7 +411,9 @@ export default function Rsu() {
       },
     ];
 
-    return { rows, nivo };
+    const ticks = yearTicks(years.map(Number)).map(String);
+
+    return { rows, nivo, ticks };
   }, [model, scenarioTotals]);
 
   useEffect(() => {
@@ -525,16 +528,26 @@ export default function Rsu() {
                 </div>
 
                 <div className="field">
-                  <label>Temperatura na Região anaeróbica (°C)</label>
-                  <input
-                    type="number"
-                    value={draft.tempAnaerobicaC}
-                    onChange={(e) => setDraft((d) => ({ ...d, tempAnaerobicaC: e.target.value }))}
-                  />
+                  <label>Zona climática (IPCC)</label>
+                  <select
+                    value={climateZoneForK(draft.kMetano)}
+                    title="Define o k padrão do IPCC 2006 (Tab. 3.3) para resíduo misto"
+                    onChange={(e) => {
+                      const zone = CLIMATE_ZONES.find((z) => z.value === e.target.value);
+                      if (zone) setDraft((d) => ({ ...d, kMetano: zone.k }));
+                    }}
+                  >
+                    <option value="">Personalizado (k informado)</option>
+                    {CLIMATE_ZONES.map((z) => (
+                      <option key={z.value} value={z.value} title={z.criterio}>
+                        {z.value} — k {String(z.k).replace(".", ",")}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="field">
-                  <label>Geração de Metano (k)</label>
+                  <label>Constante de decaimento k (1/ano)</label>
                   <input
                     type="number"
                     step="0.001"
@@ -554,7 +567,7 @@ export default function Rsu() {
                     )}
                     {MCF_OPTIONS.map((o) => (
                       <option key={o.value} value={o.value}>
-                        {o.value} — MCF {o.mcf.toFixed(1)}
+                        {o.label || o.value} — MCF {o.mcf.toFixed(1).replace(".", ",")}
                       </option>
                     ))}
                   </select>
@@ -588,7 +601,8 @@ export default function Rsu() {
               <thead>
                 <tr>
                   <th>Ano</th>
-                  <th>RSU (T/ano)</th>
+                  <th>Per capita (kg/hab/ano)</th>
+                  <th>RSU (t/ano)</th>
                   <th>População</th>
                 </tr>
               </thead>
@@ -596,6 +610,7 @@ export default function Rsu() {
                 {series.rows.map((r) => (
                   <tr key={r.ano}>
                     <td>{r.ano}</td>
+                    <td>{fmt1(r.perCapita)}</td>
                     <td>{fmt1(r.rsuTAno)}</td>
                     <td>{fmtInt(r.pop)}</td>
                   </tr>
@@ -730,7 +745,7 @@ export default function Rsu() {
 
               <div className="rsu-sum ok">
                 Lo calculado: <b>{fmt4(loCalculado)}</b>
-                <span className="rsu-lo-unit">t CH4/t RSU</span>
+                <span className="rsu-lo-unit">t CH4/t RSU ({fmt1(loCalculado / 0.0007168)} m³/t)</span>
               </div>
             </div>
           </div>
@@ -738,7 +753,7 @@ export default function Rsu() {
 
         {/* Gráfico full width */}
         <section className="card glow rsu-chart full-width">
-          <h3 className="rsu-section-title">Produção de RSU (T/ano)</h3>
+          <h3 className="rsu-section-title">Produção de RSU (t/ano)</h3>
 
           {/* container específico para evitar conflitos com .chart-container global */}
           <div className="rsu-chart-container">
@@ -746,8 +761,8 @@ export default function Rsu() {
               data={series.nivo}
               margin={
                 isMobile
-                  ? { top: 16, right: 16, bottom: 36, left: 46 }
-                  : { top: 20, right: 24, bottom: 44, left: 70 }
+                  ? { top: 16, right: 16, bottom: 52, left: 52 }
+                  : { top: 20, right: 24, bottom: 52, left: 76 }
               }
               xScale={{ type: "point" }}
               yScale={{ type: "linear", min: 0, max: "auto", stacked: false, reverse: false }}
@@ -755,18 +770,28 @@ export default function Rsu() {
               axisTop={null}
               axisRight={null}
               axisBottom={{
-                tickSize: 0,
-                tickPadding: 8,
-                tickRotation: isMobile ? -30 : 0,
+                tickSize: 4,
+                tickPadding: 6,
+                tickRotation: isMobile ? -45 : 0,
+                tickValues: isMobile ? yearTicks(series.rows.map((r) => r.ano), 6).map(String) : series.ticks,
+                legend: "Ano",
+                legendPosition: "middle",
+                legendOffset: isMobile ? 40 : 38,
               }}
               axisLeft={{
                 tickSize: 0,
                 tickPadding: 8,
                 tickRotation: 0,
                 tickValues: isMobile ? 4 : 6,
+                format: fmtAxis,
+                legend: "t/ano",
+                legendPosition: "middle",
+                legendOffset: isMobile ? -40 : -58,
               }}
-              enablePoints={!isMobile}
-              pointSize={6}
+              gridXValues={series.ticks}
+              gridYValues={isMobile ? 4 : 6}
+              enablePoints={series.rows.length <= 25 && !isMobile}
+              pointSize={5}
               pointColor="#1b5e20"
               pointBorderWidth={2}
               pointBorderColor="#fff"
@@ -790,7 +815,7 @@ export default function Rsu() {
                     fontWeight: 700,
                   }}
                 >
-                  {point.data.xFormatted}: {point.data.yFormatted} t/ano
+                  {point.data.xFormatted}: {fmtNumber(point.data.y)} t/ano
                 </div>
               )}
             />

@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
+import { Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
 import { GeoJSON, MapContainer, TileLayer } from "react-leaflet";
 import L from "leaflet";
 import { useDashboard } from "../context/DashboardContext.jsx";
 import { fetchLandfillCalculation } from "../utils/landfillCalcApi.js";
 import { DEFAULT_ANO_FINAL, normalizeLandfillConfig } from "../utils/landfillModel.js";
+import { M3_PER_TON_CH4, fmtAxis, fmtNumber, yearTicks } from "../utils/chartFormat.js";
 import "../styles/Charts.css";
 
 
@@ -403,6 +404,8 @@ export default function Charts() {
     return Array.from(set).sort((a, b) => a - b);
   }, [rows, currentScenario, config.vidaInicio, config.vidaFim]);
 
+  const methaneTicks = useMemo(() => yearTicks(years), [years]);
+
   useEffect(() => {
     if (!years.length) {
       setSelectedYear(null);
@@ -787,11 +790,26 @@ export default function Charts() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid stroke="#dfe9e3" strokeDasharray="3 3" />
-                    <XAxis dataKey="ano" tickMargin={8} />
-                    <YAxis tickFormatter={(v) => fmtTon(v)} width={90} />
+                    <XAxis dataKey="ano" tickMargin={8} ticks={methaneTicks} interval={0} />
+                    <YAxis
+                      tickFormatter={fmtAxis}
+                      width={64}
+                      label={{ value: "t CH₄/ano", angle: -90, position: "insideLeft", fill: "#1b3c2e", fontWeight: 700 }}
+                    />
                     <Legend />
+                    {config.vidaFim < (years[years.length - 1] ?? 0) && (
+                      <ReferenceLine
+                        x={config.vidaFim}
+                        stroke="#ef6c00"
+                        strokeDasharray="4 4"
+                        label={{ value: `Encerramento (${config.vidaFim})`, position: "insideTopRight", fill: "#ef6c00", fontSize: 11 }}
+                      />
+                    )}
                     <Tooltip
-                      formatter={(value, name) => [`${fmtTon(value)} t`, name]}
+                      formatter={(value, name) => [
+                        `${fmtNumber(value)} t (${fmtNumber(Number(value) * M3_PER_TON_CH4, 0)} m³)`,
+                        name,
+                      ]}
                       labelFormatter={(label) => `Ano ${label}`}
                       contentStyle={{
                         background: "#fff",
