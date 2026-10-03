@@ -14,6 +14,7 @@ import {
 import { MapContainer, TileLayer, GeoJSON, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import { useDashboard } from "../context/DashboardContext.jsx";
+import { fmtAxis, yearTicks } from "../utils/chartFormat.js";
 
 /* =========================================================
    Config APIs
@@ -670,8 +671,8 @@ export default function Home() {
   }, [rows, anoIni, anoFin]);
 
   const lineTickValues = useMemo(
-    () => lineData.map((point) => point.year),
-    [lineData]
+    () => yearTicks(lineData.map((point) => point.year), isMobile ? 6 : 14),
+    [lineData, isMobile]
   );
 
   // enquanto ainda está carregando info do usuário, mostra só loading
@@ -896,7 +897,7 @@ export default function Home() {
                   type="number"
                   domain={["auto", "auto"]}
                   tick={{ fill: "#1b3c2e", fontSize: isMobile ? 10 : 11 }}
-                  tickFormatter={(value) => Number(value).toLocaleString("pt-BR")}
+                  tickFormatter={fmtAxis}
                   tickLine={{ stroke: "#dfe9e3" }}
                   axisLine={{ stroke: "#dfe9e3" }}
                   width={isMobile ? 56 : 72}
@@ -931,7 +932,7 @@ export default function Home() {
                   dataKey="total"
                   stroke="#1b5e20"
                   strokeWidth={3}
-                  dot={{ r: 3, fill: "#f5fbf7", stroke: "#1b5e20", strokeWidth: 2 }}
+                  dot={lineData.length <= 25 ? { r: 3, fill: "#f5fbf7", stroke: "#1b5e20", strokeWidth: 2 } : false}
                   activeDot={{ r: 4 }}
                   isAnimationActive={false}
                 />
