@@ -106,6 +106,7 @@ function generatorDraftFromTemplate(template = GENERATOR_TEMPLATES[0]) {
     potenciaNominalKw: String(template.potenciaNominalKw),
     disponibilidadePct: String(template.disponibilidadePct),
     energiaEspecificaKwhPorTonCh4: String(template.energiaEspecificaKwhPorTonCh4),
+    quantidadeUnidades: "0",
   };
 }
 
@@ -118,6 +119,8 @@ function normalizeGenerator(raw, fallbackId = "gen-default") {
     potenciaNominalKw: Math.max(0, toNumber(raw?.potenciaNominalKw, 100)),
     disponibilidadePct: Math.min(100, Math.max(0, toNumber(raw?.disponibilidadePct, 90))),
     energiaEspecificaKwhPorTonCh4: Math.max(1, toNumber(raw?.energiaEspecificaKwhPorTonCh4, 13890)),
+    // 0 = automático: unidades suficientes para absorver o pico de metano.
+    quantidadeUnidades: Math.max(0, Math.round(toNumber(raw?.quantidadeUnidades, 0))),
   };
 }
 
@@ -138,29 +141,59 @@ function recoveredMethane(row) {
   return Number.isFinite(recuperado) ? recuperado : Number(row?.metanoTAno) || 0;
 }
 
-function generatorEnergyFromMethane(methaneTAno, generator) {
+const HOURS_PER_YEAR = 8760;
+
+// Potência elétrica média (kW) que o metano consegue sustentar com o gerador:
+// t CH4/ano · kWh/t (PCI) · η / 8760 h.
+function electricPowerFromMethaneKw(methaneTAno, generator) {
+  if (!generator) return 0;
+  return (
+    (Math.max(0, methaneTAno) * generator.energiaEspecificaKwhPorTonCh4 * (generator.eficienciaEletricaPct / 100)) /
+    HOURS_PER_YEAR
+  );
+}
+
+// Unidades instaladas. Em modo automático (0) dimensiona pelo pico de metano da série,
+// para que a geração acompanhe a curva de metano em vez de saturar numa unidade só.
+function resolveGeneratorUnits(generator, peakMethaneTAno) {
+  if (!generator) return 0;
+  if (generator.quantidadeUnidades > 0) return generator.quantidadeUnidades;
+  if (generator.potenciaNominalKw <= 0) return 0;
+  const peakKw = electricPowerFromMethaneKw(peakMethaneTAno, generator);
+  return Math.max(1, Math.ceil(peakKw / generator.potenciaNominalKw - 1e-9));
+}
+
+function peakMethane(rows) {
+  return rows.reduce((max, row) => Math.max(max, recoveredMethane(row)), 0);
+}
+
+// Gás chega continuamente; quando a planta está parada (1 - disponibilidade) ele é
+// queimado em flare. Logo: E = min(P_gás · η, N · P_nom) · 8760 · disponibilidade.
+function generatorEnergyFromMethane(methaneTAno, generator, units) {
   if (!generator) {
     return {
       energiaGeradaKwh: 0,
       energiaGeradaMwh: 0,
       energiaPotencialKwh: 0,
       limitePorPotenciaKwh: 0,
+      unidades: 0,
     };
   }
 
-  const methaneEnergyKwh = methaneTAno * generator.energiaEspecificaKwhPorTonCh4;
-  const energiaPosEficienciaKwh = methaneEnergyKwh * (generator.eficienciaEletricaPct / 100);
-  const energiaDisponivelKwh = energiaPosEficienciaKwh * (generator.disponibilidadePct / 100);
+  const disponibilidade = generator.disponibilidadePct / 100;
+  const energiaPotencialKwh =
+    electricPowerFromMethaneKw(methaneTAno, generator) * HOURS_PER_YEAR * disponibilidade;
   const limitePorPotenciaKwh =
-    generator.potenciaNominalKw * 8760 * (generator.disponibilidadePct / 100);
+    units * generator.potenciaNominalKw * HOURS_PER_YEAR * disponibilidade;
 
-  const energiaGeradaKwh = Math.min(energiaDisponivelKwh, limitePorPotenciaKwh);
+  const energiaGeradaKwh = Math.min(energiaPotencialKwh, limitePorPotenciaKwh);
 
   return {
     energiaGeradaKwh,
     energiaGeradaMwh: energiaGeradaKwh / 1000,
-    energiaPotencialKwh: energiaDisponivelKwh,
+    energiaPotencialKwh,
     limitePorPotenciaKwh,
+    unidades: units,
   };
 }
 
@@ -614,10 +647,21 @@ export default function Energy() {
     [generators, activeGeneratorId]
   );
 
+  const totalPeakMethaneTAno = useMemo(() => peakMethane(annualMethaneData), [annualMethaneData]);
+
+  const activeGeneratorUnits = useMemo(
+    () => resolveGeneratorUnits(activeGenerator, totalPeakMethaneTAno),
+    [activeGenerator, totalPeakMethaneTAno]
+  );
+
   const annualEnergyData = useMemo(
     () =>
       annualMethaneData.map((row) => {
-        const energy = generatorEnergyFromMethane(row.metanoRecuperadoTAno, activeGenerator);
+        const energy = generatorEnergyFromMethane(
+          row.metanoRecuperadoTAno,
+          activeGenerator,
+          activeGeneratorUnits
+        );
         return {
           ...row,
           energiaPotencialMwh: energy.energiaPotencialKwh / 1000,
@@ -625,7 +669,7 @@ export default function Energy() {
           limiteMwh: energy.limitePorPotenciaKwh / 1000,
         };
       }),
-    [annualMethaneData, activeGenerator]
+    [annualMethaneData, activeGenerator, activeGeneratorUnits]
   );
 
   const cityRowsByKey = useMemo(() => {
@@ -645,7 +689,9 @@ export default function Energy() {
         const cityRows = cityRowsByKey.get(key) || [];
         const selectedRow = cityRows.find((item) => Number(item?.ano) === selectedYear);
         const metanoTAno = Number(selectedRow?.metanoTAno) || 0;
-        const energy = generatorEnergyFromMethane(recoveredMethane(selectedRow), activeGenerator);
+        // Cada cidade com sua própria planta, dimensionada pelo pico de metano dela.
+        const units = resolveGeneratorUnits(activeGenerator, peakMethane(cityRows));
+        const energy = generatorEnergyFromMethane(recoveredMethane(selectedRow), activeGenerator, units);
 
         return {
           key,
@@ -654,8 +700,10 @@ export default function Energy() {
           populacao: Number(selectedRow?.pop) || 0,
           residuoTAno: Number(selectedRow?.residuoTAno) || 0,
           metanoTAno,
+          metanoRecuperadoTAno: recoveredMethane(selectedRow),
           energiaPotencialMwh: energy.energiaPotencialKwh / 1000,
           energiaGeradaMwh: energy.energiaGeradaMwh,
+          unidades: units,
         };
       })
       .sort((a, b) => b.energiaPotencialMwh - a.energiaPotencialMwh);
@@ -695,7 +743,8 @@ export default function Energy() {
   const generatorComparisonData = useMemo(() => {
     const methaneTAno = selectedYearTotals?.metanoRecuperadoTAno || 0;
     return comparedGenerators.map((generator) => {
-      const energy = generatorEnergyFromMethane(methaneTAno, generator);
+      const units = resolveGeneratorUnits(generator, totalPeakMethaneTAno);
+      const energy = generatorEnergyFromMethane(methaneTAno, generator, units);
       const energiaGeradaMwh = energy.energiaGeradaMwh;
       const energiaPotencialMwh = energy.energiaPotencialKwh / 1000;
       const limiteMwh = energy.limitePorPotenciaKwh / 1000;
@@ -709,6 +758,8 @@ export default function Energy() {
         eficienciaEletricaPct: generator.eficienciaEletricaPct,
         potenciaNominalKw: generator.potenciaNominalKw,
         disponibilidadePct: generator.disponibilidadePct,
+        unidades: units,
+        potenciaInstaladaKw: units * generator.potenciaNominalKw,
         energiaGeradaMwh,
         energiaPotencialMwh,
         casasAtendidasAno,
@@ -716,7 +767,7 @@ export default function Energy() {
         utilizacaoPotenciaPct,
       };
     });
-  }, [comparedGenerators, selectedYearTotals, annualResidentialConsumptionKwh]);
+  }, [comparedGenerators, selectedYearTotals, totalPeakMethaneTAno, annualResidentialConsumptionKwh]);
 
   const comparisonSeries = useMemo(() => {
     return comparedGenerators.map((generator, idx) => ({
@@ -726,18 +777,23 @@ export default function Energy() {
     }));
   }, [comparedGenerators]);
 
-  const comparisonAreaData = useMemo(
-    () =>
-      annualMethaneData.map((row) => {
-        const point = { ano: row.ano };
-        comparedGenerators.forEach((generator) => {
-          const energy = generatorEnergyFromMethane(row.metanoRecuperadoTAno, generator);
-          point[generator.id] = energy.energiaGeradaMwh;
-        });
-        return point;
-      }),
-    [annualMethaneData, comparedGenerators]
-  );
+  const comparisonAreaData = useMemo(() => {
+    const unitsById = new Map(
+      comparedGenerators.map((g) => [g.id, resolveGeneratorUnits(g, totalPeakMethaneTAno)])
+    );
+    return annualMethaneData.map((row) => {
+      const point = { ano: row.ano };
+      comparedGenerators.forEach((generator) => {
+        const energy = generatorEnergyFromMethane(
+          row.metanoRecuperadoTAno,
+          generator,
+          unitsById.get(generator.id)
+        );
+        point[generator.id] = energy.energiaGeradaMwh;
+      });
+      return point;
+    });
+  }, [annualMethaneData, comparedGenerators, totalPeakMethaneTAno]);
 
   const comparisonTicks = useMemo(
     () => yearTicks(comparisonAreaData.map((point) => point.ano), isMobile ? 6 : 14),
@@ -834,6 +890,7 @@ export default function Energy() {
         potenciaNominalKw: customDraft.potenciaNominalKw,
         disponibilidadePct: customDraft.disponibilidadePct,
         energiaEspecificaKwhPorTonCh4: customDraft.energiaEspecificaKwhPorTonCh4,
+        quantidadeUnidades: customDraft.quantidadeUnidades,
       },
       `gen-custom-${stamp}`
     );
@@ -851,6 +908,13 @@ export default function Energy() {
       return filtered;
     });
     setCompareGeneratorIds((prev) => prev.filter((gid) => gid !== id));
+  };
+
+  const handleChangeUnits = (id, value) => {
+    const unidades = Math.max(0, Math.round(toNumber(value, 0)));
+    setGenerators((prev) =>
+      prev.map((g) => (g.id === id ? { ...g, quantidadeUnidades: unidades } : g))
+    );
   };
 
   const toggleCompareGenerator = (id) => {
@@ -978,6 +1042,17 @@ export default function Energy() {
           </div>
 
           <div className="field">
+            <label>Quantidade de unidades (0 = automático)</label>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={customDraft.quantidadeUnidades}
+              onChange={(e) => setCustomDraft((prev) => ({ ...prev, quantidadeUnidades: e.target.value }))}
+            />
+          </div>
+
+          <div className="field">
             <label>Energia especifica do CH4 (kWh/t)</label>
             <input
               type="number"
@@ -1023,6 +1098,7 @@ export default function Energy() {
                 <th>Efic (%)</th>
                 <th>Pot. (kW)</th>
                 <th>Disp. (%)</th>
+                <th>Unidades</th>
                 <th>Acoes</th>
               </tr>
             </thead>
@@ -1050,6 +1126,20 @@ export default function Energy() {
                   <td>{fmtTon(g.potenciaNominalKw)}</td>
                   <td>{fmtTon(g.disponibilidadePct)}</td>
                   <td>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      className="energy-units-input"
+                      value={g.quantidadeUnidades}
+                      title="0 = automático (dimensionado pelo pico de metano)"
+                      onChange={(e) => handleChangeUnits(g.id, e.target.value)}
+                    />
+                    {g.quantidadeUnidades === 0 && (
+                      <small> auto: {resolveGeneratorUnits(g, totalPeakMethaneTAno)}</small>
+                    )}
+                  </td>
+                  <td>
                     <button
                       type="button"
                       className="icon-btn"
@@ -1071,7 +1161,8 @@ export default function Energy() {
         <div className="energy-generator-header">
           <h3>Comparativo de Geradores ({selectedYear || "-"})</h3>
           <p>
-            Curva anual baseada no potencial energético do metano para os geradores selecionados.
+            Curva anual de geração a partir do metano recuperado, limitada pela potência instalada
+            (unidades × potência nominal) dos geradores selecionados.
             Consumo usado: {fmtInt(annualResidentialConsumptionKwh)} kWh/ano por residência.
           </p>
         </div>
@@ -1111,7 +1202,7 @@ export default function Energy() {
                     axisLine={{ stroke: "#dfe9e3" }}
                   />
                   <YAxis
-                    domain={["auto", "auto"]}
+                    domain={[0, "auto"]}
                     width={isMobile ? 56 : 64}
                     tickFormatter={fmtAxis}
                     tick={{ fill: "#1b3c2e", fontSize: isMobile ? 10 : 11 }}
@@ -1160,6 +1251,8 @@ export default function Energy() {
                     <th>Efic. (%)</th>
                     <th>Pot. (kW)</th>
                     <th>Disp. (%)</th>
+                    <th>Unidades</th>
+                    <th>Pot. instalada (kW)</th>
                     <th>Energia gerada (MWh)</th>
                     <th>Energia potencial (MWh)</th>
                     <th>Casas/ano</th>
@@ -1174,6 +1267,8 @@ export default function Energy() {
                       <td>{fmtTon(row.eficienciaEletricaPct)}</td>
                       <td>{fmtTon(row.potenciaNominalKw)}</td>
                       <td>{fmtTon(row.disponibilidadePct)}</td>
+                      <td>{fmtInt(row.unidades)}</td>
+                      <td>{fmtInt(row.potenciaInstaladaKw)}</td>
                       <td>{fmtMwh(row.energiaGeradaMwh)}</td>
                       <td>{fmtMwh(row.energiaPotencialMwh)}</td>
                       <td>{fmtInt(row.casasAtendidasAno)}</td>
@@ -1222,7 +1317,9 @@ export default function Energy() {
                 <span className="material-icons exp-icon">tune</span>
                 <div className="exp-text">
                   <p className="green-text">{activeGenerator?.nome || "Sem gerador"}</p>
-                  <h2>{fmtTon(activeGenerator?.potenciaNominalKw || 0)} kW</h2>
+                  <h2>
+                    {fmtInt(activeGeneratorUnits)} × {fmtTon(activeGenerator?.potenciaNominalKw || 0)} kW
+                  </h2>
                 </div>
               </div>
             </div>
@@ -1255,11 +1352,15 @@ export default function Energy() {
                         <strong>{fmtTon(selectedCity.metanoTAno)} t/ano</strong>
                       </div>
                       <div className="energy-city-stat">
+                        <span>Metano recuperado</span>
+                        <strong>{fmtTon(selectedCity.metanoRecuperadoTAno)} t/ano</strong>
+                      </div>
+                      <div className="energy-city-stat">
                         <span>Potencial elétrico (metano)</span>
                         <strong>{fmtMwh(selectedCity.energiaPotencialMwh)} MWh/ano</strong>
                       </div>
                       <div className="energy-city-stat">
-                        <span>Geração limitada por potência</span>
+                        <span>Geração ({fmtInt(selectedCity.unidades)} unidade(s))</span>
                         <strong>{fmtMwh(selectedCity.energiaGeradaMwh)} MWh/ano</strong>
                       </div>
                     </div>

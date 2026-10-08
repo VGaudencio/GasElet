@@ -378,3 +378,8 @@
     min-height: 300px;
   }
 }
+
+.energy-units-input {
+  width: 64px;
+  padding: 4px 6px;
+}
