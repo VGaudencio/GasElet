@@ -1,0 +1,234 @@
+=====================================================================
+ GASELET NO WINDOWS RODANDO 24/7 (equivalente ao systemd)
+=====================================================================
+
+O sistema tem duas partes:
+  - Backend: server/  -> executável C++ (Drogon) "drogon-react-ws", porta 7080
+  - Frontend: client/ -> build estático (client/dist) servido pelo próprio Drogon
+
+No Windows há dois caminhos. O caminho A é bem mais simples, porque o
+código hoje depende de coisas específicas do Linux (veja a seção 3).
+
+  A) WSL2 + systemd   (RECOMENDADO - quase sem mudar o código)
+  B) Nativo Windows + NSSM ou WinSW (serviço do Windows) - exige ajustes no código
+
+
+=====================================================================
+ 1) CAMINHO A - WSL2 + systemd (recomendado)
+=====================================================================
+
+O WSL2 roda um Ubuntu de verdade e suporta systemd, então dá pra usar
+exatamente o mesmo esquema do Linux.
+
+--- 1.1 O que instalar no Windows ---------------------------------
+  - Windows 10 22H2+ ou Windows 11
+  - Virtualização ativada na BIOS (Intel VT-x / AMD-V)
+  - No PowerShell como Administrador:
+        wsl --install -d Ubuntu-24.04
+        wsl --update
+  - Reiniciar o PC
+
+--- 1.2 Ativar systemd dentro do Ubuntu (WSL) ----------------------
+  Dentro do Ubuntu:
+        sudo nano /etc/wsl.conf
+  Conteúdo:
+        [boot]
+        systemd=true
+  No PowerShell:
+        wsl --shutdown
+  Abrir o Ubuntu de novo e conferir:
+        systemctl --version
+
+--- 1.3 Dependências no Ubuntu (as mesmas do CI) -------------------
+        sudo apt update
+        sudo apt install -y git cmake ninja-build g++ pkg-config \
+          libssl-dev libjsoncpp-dev libcrypt-dev uuid-dev libz-dev \
+          libsqlite3-dev libpq-dev libmariadb-dev libmariadb-dev-compat \
+          libbrotli-dev libdrogon-dev libhiredis-dev libyaml-cpp-dev
+        # Node 20+ (para buildar o frontend)
+        curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+        sudo apt install -y nodejs
+
+--- 1.4 Clonar e buildar -----------------------------------------
+  Clone DENTRO do Linux (ex.: ~/GasElet), não em /mnt/c/... (fica lento).
+        git clone <repo> ~/GasElet
+        cd ~/GasElet/client && npm ci && npm run build
+        cd ~/GasElet/server
+        cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+        cmake --build build -j
+
+--- 1.5 AJUSTAR CAMINHOS FIXOS (obrigatório) -----------------------
+  O código tem caminhos fixos de outra máquina:
+    - server/config.json  -> "document_root": "/home/victor/code/aterro_web/client/dist/"
+    - server/main.cpp     -> jsonBaseDir = "/home/victor/code/aterro_web/server/Dados/"
+                             e fallbacks para /home/victor/code/aterro_web/...
+  Troque para o caminho real (ex.: /home/<usuario>/GasElet/...) e recompile,
+  ou crie um link simbólico com esse caminho antigo:
+        mkdir -p /home/victor/code
+        ln -s ~/GasElet /home/victor/code/aterro_web
+  Também: Dados/users/ é relativo ao diretório de trabalho -> o serviço
+  precisa rodar com WorkingDirectory = pasta server/.
+
+--- 1.6 Arquivo de segredo ---------------------------------------
+        sudo mkdir -p /etc/gaselet
+        sudo nano /etc/gaselet/gaselet.env
+  Conteúdo:
+        JWT_SECRET=<gere com: openssl rand -hex 32>
+        DROGON_CONFIG_FILE=/home/<usuario>/GasElet/server/config.json
+        sudo chmod 600 /etc/gaselet/gaselet.env
+
+--- 1.7 Unit do systemd --------------------------------------------
+        sudo nano /etc/systemd/system/gaselet.service
+
+        [Unit]
+        Description=Gaselet (Drogon backend + frontend)
+        After=network-online.target
+        Wants=network-online.target
+
+        [Service]
+        Type=simple
+        User=<usuario>
+        WorkingDirectory=/home/<usuario>/GasElet/server
+        EnvironmentFile=/etc/gaselet/gaselet.env
+        ExecStart=/home/<usuario>/GasElet/server/build/drogon-react-ws
+        Restart=always
+        RestartSec=5
+        LimitNOFILE=65535
+
+        [Install]
+        WantedBy=multi-user.target
+
+        sudo systemctl daemon-reload
+        sudo systemctl enable --now gaselet
+        systemctl status gaselet
+        journalctl -u gaselet -f        # logs
+
+--- 1.8 Fazer o WSL subir sozinho junto com o Windows ---------------
+  Por padrão o WSL desliga quando não há terminal aberto. Para manter 24/7:
+
+  a) Impedir desligamento por ociosidade. Em C:\Users\<voce>\.wslconfig:
+        [wsl2]
+        vmIdleTimeout=-1
+     (em versões mais novas também existe [general] instanceIdleTimeout=-1)
+
+  b) Iniciar o WSL no boot via Agendador de Tarefas (taskschd.msc):
+        - Criar Tarefa...
+        - Geral: "Executar estando o usuário conectado ou não"
+                 + "Executar com privilégios mais altos"
+        - Disparadores: "Na inicialização"
+        - Ações: Programa = C:\Windows\System32\wsl.exe
+                 Argumentos = -d Ubuntu-24.04 --exec /bin/sleep infinity
+                 (ao iniciar a distro o systemd sobe o gaselet.service
+                  sozinho; o "sleep infinity" mantém o WSL vivo)
+        - Configurações: desmarcar "Parar a tarefa se executar por mais de..."
+                         marcar "Se a tarefa falhar, reiniciar a cada 1 minuto"
+
+  c) Energia: Painel de Controle > Opções de Energia > "Nunca suspender".
+
+--- 1.9 Expor a porta 7080 para a rede -----------------------------
+  Opção 1 (Windows 11 22H2+): modo de rede espelhado. No .wslconfig:
+        [wsl2]
+        networkingMode=mirrored
+     Depois: wsl --shutdown. A porta 7080 fica acessível no IP do Windows.
+
+  Opção 2 (Windows 10): portproxy (o IP do WSL muda a cada boot!):
+        wsl hostname -I        # pega o IP do WSL
+        netsh interface portproxy add v4tov4 listenport=7080 listenaddress=0.0.0.0 connectport=7080 connectaddress=<IP_WSL>
+
+  Liberar no firewall (PowerShell admin):
+        New-NetFirewallRule -DisplayName "Gaselet 7080" -Direction Inbound -Protocol TCP -LocalPort 7080 -Action Allow
+
+  Para internet/HTTPS: use Cloudflare Tunnel (cloudflared) apontando para
+  http://localhost:7080 - ele pode rodar como serviço systemd no WSL também
+  (veja docs/DEPLOY.md sobre Mixed Content e VITE_API_BASE vazio).
+
+
+=====================================================================
+ 2) CAMINHO B - Nativo no Windows (serviço do Windows)
+=====================================================================
+
+--- 2.1 Ferramentas --------------------------------------------------
+  - Visual Studio 2022 Build Tools (workload "Desenvolvimento para desktop com C++")
+  - CMake 3.14+  e  Ninja
+  - Git
+  - Node.js 20+ LTS
+  - vcpkg (gerenciador de pacotes C++):
+        git clone https://github.com/microsoft/vcpkg C:\vcpkg
+        C:\vcpkg\bootstrap-vcpkg.bat
+        C:\vcpkg\vcpkg install drogon[ctl] openssl jsoncpp zlib brotli jwt-cpp --triplet x64-windows
+  - NSSM (https://nssm.cc) ou WinSW (https://github.com/winsw/winsw)
+    -> é o que faz o papel do systemd (sobe no boot, reinicia se cair)
+
+--- 2.2 MUDANÇAS DE CÓDIGO NECESSÁRIAS (não compila no Windows hoje) --
+  1. include/bcrypt_xcrypt.hpp usa <crypt.h> (libxcrypt) -> NÃO existe no
+     Windows. Trocar por uma lib bcrypt portável, por exemplo a que já está
+     em external/Bcrypt.cpp, ou libsodium / OpenSSL. Manter compatível
+     com hashes "$2y$" já salvos em Dados/users/users.json.
+  2. server/CMakeLists.txt linka "crypt" -> remover no Windows
+     (if(NOT WIN32) ... endif()).
+  3. server/main.cpp:
+       - #include <unistd.h>  -> não existe no MSVC (envolver em #ifndef _WIN32)
+       - std::signal(SIGPIPE, ...) -> SIGPIPE não existe no Windows
+         (envolver em #ifndef _WIN32)
+       - caminhos fixos /home/victor/... -> trocar por caminho relativo ao
+         executável ou por variável de ambiente
+  4. -Wall -Wextra -Wpedantic são flags de GCC/Clang; o CMake já só aplica
+     se o compilador for GNU/Clang, ok.
+
+--- 2.3 Build ------------------------------------------------------------
+        cd client && npm ci && npm run build
+        cd ..\server
+        cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release ^
+          -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake
+        cmake --build build
+  Copiar as DLLs do vcpkg (C:\vcpkg\installed\x64-windows\bin\*.dll) para
+  a mesma pasta do drogon-react-ws.exe (o vcpkg costuma fazer isso sozinho).
+
+  Ajustar server\config.json:
+        "document_root": "C:/Gaselet/client/dist/"
+
+--- 2.4 Instalar como serviço com NSSM (PowerShell admin) -------------
+        nssm install Gaselet "C:\Gaselet\server\build\drogon-react-ws.exe"
+        nssm set Gaselet AppDirectory "C:\Gaselet\server"
+        nssm set Gaselet AppEnvironmentExtra "JWT_SECRET=<segredo-forte>" "DROGON_CONFIG_FILE=C:\Gaselet\server\config.json"
+        nssm set Gaselet Start SERVICE_AUTO_START
+        nssm set Gaselet AppExit Default Restart
+        nssm set Gaselet AppRestartDelay 5000
+        nssm set Gaselet AppStdout "C:\Gaselet\logs\out.log"
+        nssm set Gaselet AppStderr "C:\Gaselet\logs\err.log"
+        nssm set Gaselet AppRotateFiles 1
+        nssm set Gaselet AppRotateBytes 10485760
+        nssm start Gaselet
+
+  Comandos equivalentes ao systemctl:
+        nssm start|stop|restart|status Gaselet
+        sc query Gaselet
+        services.msc   (interface gráfica)
+
+  Recuperação extra em caso de falha (opcional):
+        sc failure Gaselet reset= 86400 actions= restart/5000/restart/5000/restart/5000
+
+  Firewall:
+        New-NetFirewallRule -DisplayName "Gaselet 7080" -Direction Inbound -Protocol TCP -LocalPort 7080 -Action Allow
+
+  Observação: o serviço roda como LocalSystem por padrão. A pasta
+  C:\Gaselet\server\Dados\users precisa ter permissão de escrita para a
+  conta do serviço (nssm set Gaselet ObjectName ".\usuario" "senha" para
+  rodar como outro usuário).
+
+
+=====================================================================
+ 3) CHECKLIST RÁPIDO
+=====================================================================
+  [ ] Frontend buildado (client/dist existe com index.html)
+  [ ] Backend compilado em Release
+  [ ] Caminhos /home/victor/code/aterro_web/... corrigidos (config.json e main.cpp)
+  [ ] JWT_SECRET forte definido (não usar "troque-este-segredo")
+  [ ] Serviço roda com diretório de trabalho = pasta server/ (por causa de Dados/users)
+  [ ] Serviço com início automático + reinício em falha
+  [ ] WSL: systemd=true, idle timeout desativado, tarefa no boot
+  [ ] Porta 7080 liberada no firewall / portproxy ou networkingMode=mirrored
+  [ ] PC configurado para nunca suspender; Windows Update com horário ativo definido
+  [ ] Backup periódico de server/Dados/users/*.json
+  [ ] Testar: reiniciar o Windows e abrir http://<ip>:7080 sem logar no PC
+  [ ] Atenção: cadastro de usuário só é permitido pela máquina local do servidor

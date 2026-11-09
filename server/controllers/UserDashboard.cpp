@@ -22,7 +22,20 @@ namespace {
 
     constexpr double kDocf = 0.5;
     constexpr double kMethaneFraction = 0.5;
-    constexpr double kTonPerM3Methane = 0.0007168;  // t CH4 / m3 CH4
+    constexpr double kTonPerM3Methane = 0.0007168;  // t CH4 / m3 CH4 (0 °C, 1 atm)
+
+    // DOC de metal, vidro e "outros": o IPCC 2006 (Vol. 5, Tab. 2.4) trata essas
+    // frações como inertes (DOC = 0). O 0,01 da versão anterior só vale no método legado.
+    constexpr double kDocInertesIpcc = 0.0;
+    constexpr double kDocInertesLegado = 0.01;
+
+    // Discretização anual do decaimento de primeira ordem (FOD).
+    // Espelhado em client/src/utils/landfillModel.js (FOD_METHODS).
+    enum class FodMethod {
+        Ipcc2000,  // GPG 2000, Eq. 5.1 (fator A = (1 - e^-k)/k); padrão
+        Ipcc2006,  // IPCC 2006: atraso de 6 meses, decompõe a partir do ano seguinte
+        Legado,    // até out/2026: k·M·L0·e^-k(t-x), sem normalização
+    };
 
     struct RegionCoeff {
         double a;
@@ -220,7 +233,35 @@ namespace {
         return 1.0;
     }
 
-    double computeDoc(const Composition& c)
+    FodMethod fodMethodFromString(const std::string& value)
+    {
+        if (value == "ipcc2006") return FodMethod::Ipcc2006;
+        if (value == "legado") return FodMethod::Legado;
+        return FodMethod::Ipcc2000;
+    }
+
+    const char* fodMethodName(FodMethod metodo)
+    {
+        switch (metodo) {
+            case FodMethod::Ipcc2006: return "ipcc2006";
+            case FodMethod::Legado: return "legado";
+            case FodMethod::Ipcc2000: break;
+        }
+        return "ipcc2000";
+    }
+
+    FodMethod resolveFodMethod(const Json::Value& config)
+    {
+        return fodMethodFromString(config.get("metodoFod", "").asString());
+    }
+
+    double docInertesFor(FodMethod metodo)
+    {
+        return metodo == FodMethod::Legado ? kDocInertesLegado : kDocInertesIpcc;
+    }
+
+    // DOC padrão por fração (IPCC 2006, Vol. 5, Tab. 2.4, base úmida).
+    double computeDoc(const Composition& c, double docInertes)
     {
         return
             (c.papel / 100.0) * 0.40 +
@@ -229,12 +270,12 @@ namespace {
             (c.texteis / 100.0) * 0.24 +
             (c.madeira / 100.0) * 0.43 +
             (c.borracha / 100.0) * 0.39 +
-            ((c.metal / 100.0) + (c.vidro / 100.0) + (c.outros / 100.0)) * 0.01;
+            ((c.metal / 100.0) + (c.vidro / 100.0) + (c.outros / 100.0)) * docInertes;
     }
 
-    double computeLoTonPerTon(const Composition& c, double mcf)
+    double computeLoTonPerTon(const Composition& c, double mcf, double docInertes)
     {
-        const double doc = computeDoc(c);
+        const double doc = computeDoc(c, docInertes);
         return mcf * doc * kDocf * kMethaneFraction * (16.0 / 12.0);
     }
 
@@ -279,12 +320,19 @@ namespace {
         return totals;
     }
 
+    // Metano gerado por ano (t CH4/ano). Cada lote M(x) contribui com
+    //   M(x) · L0 · f · e^(-k (t - x - atraso)),   t >= x + atraso,
+    // em que f é a fração do lote que decompõe no primeiro ano de reação:
+    //   - IPCC 2000 e 2006: f = 1 - e^-k, logo a soma no tempo é exatamente L0 · M(x);
+    //   - legado: f = k, que soma k/(1 - e^-k) · L0 · M(x) (+2,5% com k = 0,05).
+    // O IPCC 2006 (atraso de 6 meses, M = 13 na planilha) só começa no ano seguinte.
     std::map<int, double> computeMethaneByYear(const std::map<int, double>& residueByYear,
                                                int anoInicial,
                                                int anoFinal,
                                                int maxYear,
                                                double kMetano,
-                                               double loTonPerTon)
+                                               double loTonPerTon,
+                                               FodMethod metodo)
     {
         std::map<int, double> out;
         if (anoFinal < anoInicial) anoFinal = anoInicial;
@@ -295,17 +343,23 @@ namespace {
             out[year] = 0.0;
         }
 
+        if (!(kMetano > 0.0)) return out;
+
+        const double firstYearFraction =
+            (metodo == FodMethod::Legado) ? kMetano : -std::expm1(-kMetano);
+        const int atraso = (metodo == FodMethod::Ipcc2006) ? 1 : 0;
+
         for (int year = anoInicial; year <= anoFinal; ++year)
         {
             const auto it = residueByYear.find(year);
             const double residue = (it != residueByYear.end()) ? it->second : 0.0;
 
-            for (int targetYear = year; targetYear <= maxYear; ++targetYear)
+            for (int targetYear = year + atraso; targetYear <= maxYear; ++targetYear)
             {
-                const double emission =
-                    residue * kMetano * loTonPerTon *
-                    std::exp(-kMetano * static_cast<double>(targetYear - year));
-                out[targetYear] += emission;
+                const double generated =
+                    residue * loTonPerTon * firstYearFraction *
+                    std::exp(-kMetano * static_cast<double>(targetYear - year - atraso));
+                out[targetYear] += generated;
             }
         }
 
@@ -377,14 +431,16 @@ namespace {
         const double popBase = parseJsonNumber(config["popBase"], 0.0);
         const double growthPct = parseJsonNumber(config["popCrescimentoAnualPct"], 0.0);
         const double growth = growthPct / 100.0;
-        const double kMetano = parseJsonNumber(config["kMetano"], kDefaultKMetano);
+        const double kMetano = std::max(0.0, parseJsonNumber(config["kMetano"], kDefaultKMetano));
         const double captacao = std::clamp(
             parseJsonNumber(config["captacaoBiogasPct"], kDefaultCaptacaoBiogasPct), 0.0, 100.0) / 100.0;
 
+        const FodMethod metodoFod = resolveFodMethod(config);
+        const double docInertes = docInertesFor(metodoFod);
         const Composition comp = parseComposition(config);
         const double mcf = resolveMCF(config);
-        const double doc = computeDoc(comp);
-        const double loTonPerTon = computeLoTonPerTon(comp, mcf);
+        const double doc = computeDoc(comp, docInertes);
+        const double loTonPerTon = computeLoTonPerTon(comp, mcf, docInertes);
         const double loM3PerTon = (kTonPerM3Methane > 0.0) ? (loTonPerTon / kTonPerM3Methane) : 0.0;
 
         const auto totalPopByYear = sumPopulationFromRows(rows, anoInicial, maxYear);
@@ -420,7 +476,8 @@ namespace {
             anoFinal,
             maxYear,
             kMetano,
-            loTonPerTon);
+            loTonPerTon,
+            metodoFod);
 
         for (Json::ArrayIndex i = 0; i < totalRows.size(); ++i)
         {
@@ -469,7 +526,8 @@ namespace {
                 anoFinal,
                 maxYear,
                 kMetano,
-                loTonPerTon);
+                loTonPerTon,
+                metodoFod);
 
             for (Json::ArrayIndex i = 0; i < cityRows.size(); ++i)
             {
@@ -494,6 +552,7 @@ namespace {
         out["anoFinal"] = anoFinal;
         out["maxYear"] = maxYear;
         out["kMetano"] = kMetano;
+        out["metodoFod"] = fodMethodName(metodoFod);
         out["doc"] = doc;
         out["mcf"] = mcf;
         out["captacaoBiogasPct"] = captacao * 100.0;

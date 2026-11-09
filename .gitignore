@@ -31,3 +31,7 @@ Makefile
 
 # certificados locais (NÃO COMMITAR)
 server/certs/
+
+# Documentos (tese, revisões) — não versionar
+*.docx
+~$*

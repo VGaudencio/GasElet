@@ -9,9 +9,12 @@ import {
   DEFAULT_ANO_INICIAL,
   DEFAULT_COMPOSICAO,
   CLIMATE_ZONES,
+  DEFAULT_FOD_METHOD,
+  FOD_METHODS,
   MCF_OPTIONS,
   climateZoneForK,
   computeLoTonPerTon,
+  resolveFodMethod,
 } from "../utils/landfillModel.js";
 
 const API_BASE =
@@ -53,6 +56,7 @@ function makeDefaultDraft() {
     captacaoBiogasPct: 100,
     gerenciamento: "Gerenciado",
     kMetano: 0.05,
+    metodoFod: DEFAULT_FOD_METHOD,
 
     // Composição
     composicao: { ...DEFAULT_COMPOSICAO },
@@ -87,6 +91,7 @@ function isDefaultConfig(config) {
     Number(config.vidaFim) === base.vidaFim &&
     Number(config.captacaoBiogasPct) === base.captacaoBiogasPct &&
     Number(config.kMetano) === base.kMetano &&
+    resolveFodMethod(config.metodoFod) === base.metodoFod &&
     String(config.gerenciamento) === base.gerenciamento &&
     Number(config.popBase) === base.popBase &&
     Number(config.popCrescimentoAnualPct) === base.popCrescimentoAnualPct
@@ -337,8 +342,8 @@ export default function Rsu() {
   const compOk = useMemo(() => Math.abs(deltaComposicao) <= 0.2, [deltaComposicao]);
 
   const loCalculado = useMemo(
-    () => computeLoTonPerTon(compNums, String(draft.gerenciamento || "")),
-    [draft.gerenciamento, compNums]
+    () => computeLoTonPerTon(compNums, String(draft.gerenciamento || ""), draft.metodoFod),
+    [draft.gerenciamento, draft.metodoFod, compNums]
   );
 
   const normalizarComposicao = () => {
@@ -541,6 +546,7 @@ export default function Rsu() {
                     {CLIMATE_ZONES.map((z) => (
                       <option key={z.value} value={z.value} title={z.criterio}>
                         {z.value} — k {String(z.k).replace(".", ",")}
+                        {z.brasil === false ? " (não ocorre no Brasil)" : ""}
                       </option>
                     ))}
                   </select>
@@ -568,6 +574,21 @@ export default function Rsu() {
                     {MCF_OPTIONS.map((o) => (
                       <option key={o.value} value={o.value}>
                         {o.label || o.value} — MCF {o.mcf.toFixed(1).replace(".", ",")}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="field">
+                  <label>Discretização do decaimento (FOD)</label>
+                  <select
+                    value={resolveFodMethod(draft.metodoFod)}
+                    title={FOD_METHODS.find((m) => m.value === resolveFodMethod(draft.metodoFod))?.descricao}
+                    onChange={(e) => setDraft((d) => ({ ...d, metodoFod: e.target.value }))}
+                  >
+                    {FOD_METHODS.map((m) => (
+                      <option key={m.value} value={m.value} title={m.descricao}>
+                        {m.label}
                       </option>
                     ))}
                   </select>

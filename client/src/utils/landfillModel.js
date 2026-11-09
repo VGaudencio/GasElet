@@ -17,12 +17,47 @@ export const DEFAULT_COMPOSICAO = {
   outros: 13.0,
 };
 
+// Discretização anual do decaimento de primeira ordem (FOD). Espelha FodMethod
+// em server/controllers/UserDashboard.cpp.
+export const FOD_METHODS = [
+  {
+    value: "ipcc2000",
+    label: "IPCC 2000 — normalizado",
+    descricao:
+      "GPG 2000, Eq. 5.1: Σ M·L0·(1−e^−k)·e^−k(t−x). Cada lote gera exatamente L0·M ao longo do tempo.",
+  },
+  {
+    value: "ipcc2006",
+    label: "IPCC 2006 — atraso de 6 meses",
+    descricao:
+      "Como a planilha IPCC_Waste_Model: a decomposição começa no ano seguinte ao da deposição.",
+  },
+  {
+    value: "legado",
+    label: "Legado (até out/2026)",
+    descricao:
+      "k·M·L0·e^−k(t−x) e DOC 0,01 para inertes. Superestima o total em k/(1−e^−k); use só para reproduzir resultados antigos.",
+  },
+];
+
+export const DEFAULT_FOD_METHOD = "ipcc2000";
+
+export function resolveFodMethod(value) {
+  return FOD_METHODS.some((m) => m.value === value) ? value : DEFAULT_FOD_METHOD;
+}
+
+// DOC de metal, vidro e "outros": inertes no IPCC 2006 (Tab. 2.4); 0,01 só no legado.
+function docInertes(metodoFod) {
+  return resolveFodMethod(metodoFod) === "legado" ? 0.01 : 0;
+}
+
 export const DEFAULT_LANDFILL_CONFIG = {
   regiao: "Nordeste",
   geracaoKgAnoHab: 328.3,
   taxaColetaPct: 100,
   kMetano: 0.05,
   gerenciamento: "Gerenciado",
+  metodoFod: DEFAULT_FOD_METHOD,
   captacaoBiogasPct: 100,
   vidaInicio: DEFAULT_ANO_INICIAL,
   vidaFim: DEFAULT_ANO_FINAL,
@@ -52,7 +87,7 @@ export const CLIMATE_ZONES = [
   { value: "Tropical úmido", k: 0.17, criterio: "MAT > 20 °C e MAP ≥ 1000 mm" },
   { value: "Tropical seco", k: 0.065, criterio: "MAT > 20 °C e MAP < 1000 mm" },
   { value: "Temperado úmido", k: 0.09, criterio: "MAT ≤ 20 °C e MAP/PET > 1" },
-  { value: "Temperado seco", k: 0.05, criterio: "MAT ≤ 20 °C e MAP/PET < 1" },
+  { value: "Temperado seco", k: 0.05, criterio: "MAT ≤ 20 °C e MAP/PET < 1", brasil: false },
 ];
 
 export function climateZoneForK(k) {
@@ -65,7 +100,7 @@ export function resolveMcf(gerenciamento) {
   return LEGACY_MCF[gerenciamento] ?? 1.0;
 }
 
-export function computeDoc(c) {
+export function computeDoc(c, metodoFod = DEFAULT_FOD_METHOD) {
   return (
     (c.papel / 100) * 0.4 +
     (c.organica / 100) * 0.15 +
@@ -73,13 +108,13 @@ export function computeDoc(c) {
     (c.texteis / 100) * 0.24 +
     (c.madeira / 100) * 0.43 +
     (c.borracha / 100) * 0.39 +
-    (c.metal / 100 + c.vidro / 100 + c.outros / 100) * 0.01
+    (c.metal / 100 + c.vidro / 100 + c.outros / 100) * docInertes(metodoFod)
   );
 }
 
 // Lo em t CH4 / t RSU: MCF · DOC · DOCf(0,5) · F(0,5) · 16/12
-export function computeLoTonPerTon(composicao, gerenciamento) {
-  return resolveMcf(gerenciamento) * computeDoc(composicao) * 0.5 * 0.5 * (16 / 12);
+export function computeLoTonPerTon(composicao, gerenciamento, metodoFod = DEFAULT_FOD_METHOD) {
+  return resolveMcf(gerenciamento) * computeDoc(composicao, metodoFod) * 0.5 * 0.5 * (16 / 12);
 }
 
 function toNumber(v, fallback = 0) {
@@ -102,6 +137,7 @@ export function normalizeLandfillConfig(config) {
     taxaColetaPct: toNumber(merged.taxaColetaPct, d.taxaColetaPct),
     kMetano: toNumber(merged.kMetano, d.kMetano),
     gerenciamento: String(merged.gerenciamento || d.gerenciamento),
+    metodoFod: resolveFodMethod(merged.metodoFod),
     captacaoBiogasPct: toNumber(merged.captacaoBiogasPct, d.captacaoBiogasPct),
     vidaInicio: Math.round(toNumber(merged.vidaInicio, d.vidaInicio)),
     vidaFim: Math.round(toNumber(merged.vidaFim, d.vidaFim)),

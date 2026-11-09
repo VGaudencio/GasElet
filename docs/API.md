@@ -125,9 +125,15 @@ Payload:
 }
 ```
 
+Campo `config.metodoFod` (discretização anual do decaimento de primeira ordem):
+
+- `ipcc2000` (padrão): IPCC GPG 2000, Eq. 5.1, com fator de normalização `A = (1 − e^−k)/k`. Cada lote gera `L0 · M` no total;
+- `ipcc2006`: atraso de 6 meses da planilha IPCC 2006. A decomposição começa no ano seguinte ao da deposição;
+- `legado`: fórmula usada até out/2026 (`k · M · L0 · e^−k(t−x)`, DOC 0,01 para metal/vidro/outros). Reproduz resultados antigos; superestima o total em `k/(1 − e^−k)`.
+
 Response (`200`):
 
-- objeto com `status: "ok"`, séries totais, séries por cidade e parâmetros derivados (`doc`, `mcf`, `loTonPerTon`, `captacaoBiogasPct`, etc.). Cada linha anual traz `metanoTAno` (gerado) e `metanoRecuperadoTAno` (gerado × captação).
+- objeto com `status: "ok"`, séries totais, séries por cidade e parâmetros derivados (`doc`, `mcf`, `loTonPerTon`, `captacaoBiogasPct`, `metodoFod`, etc.). Cada linha anual traz `metanoTAno` (gerado) e `metanoRecuperadoTAno` (gerado × captação).
 
 ## Endpoint de JSON protegido
 
