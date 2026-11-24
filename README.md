@@ -430,10 +430,7 @@ Os dados pertencem às respectivas instituições e são usados com atribuição
 <table>
   <tr>
     <td width="90" align="center"><img src="docs/readme/brasao-ufpb.png" width="64" alt="Brasão da UFPB"></td>
-    <td>
-      Plataforma desenvolvida no <b>Laboratório de Microengenharia</b> do Centro de Energias Alternativas e Renováveis (CEAR) da <b>Universidade Federal da Paraíba (UFPB)</b>.<br>
-      <sub>Brasão da UFPB: vetor de Teo Gab (Wikimedia Commons, CC BY-SA 4.0). Mapas: <a href="https://leafletjs.com">Leaflet</a> (BSD-2-Clause) e © colaboradores do OpenStreetMap (ODbL). Ícones da interface: <a href="https://react-icons.github.io/react-icons/">react-icons</a> / Font Awesome (CC BY 4.0).</sub>
-    </td>
+    
   </tr>
 </table>
 
