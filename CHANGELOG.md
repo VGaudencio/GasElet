@@ -13,12 +13,14 @@ e versionamento semântico.
 - documentação técnica em `docs/API.md`, `docs/ARCHITECTURE.md` e `docs/DEPLOY.md`.
 - arquivos de governança: `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`.
 - fallback de persistência local e flush explícito no logout para reduzir perda de estado.
+- resumo do aterro no topo de todas as telas: nome do cenário, linha do tempo da operação, municípios, região, população e resíduo previsto.
 - rodapé nas telas internas com a marca, o crédito do Laboratório de Microengenharia do CEAR (UFPB) e as fontes de dados.
 - geração per capita do SNIS: curvas logísticas integradas por Runge-Kutta 4 de 2000 a 2065, ajustadas à coleta per capita de 2003–2021 (Co119/Co164). Cada município usa a curva da sua UF quando os dados do estado são confiáveis (15 UFs) e a da região nos demais casos. Ajuste, critérios e validação em `analise_sinis/`.
 
 ### Changed
 
 - reorganização da documentação principal do projeto.
+- indicadores sem repetir o resumo do aterro: Início mostra população inicial e final; Metano mostra metano gerado e recuperado.
 - interface revista: tipografia Barlow, painéis com contorno em vez de sombra, laranja só para metano e energia, textos com acentos e em linguagem direta; tela "Gráficos" passa a se chamar "Metano"; login sem elementos decorativos nem links sem função.
 - README reescrito com banner, capturas de tela (desktop e celular), ícones, modelo de cálculo e arquitetura; imagens em `docs/readme/`.
 - MCF segue a Tabela 3.1 do IPCC 2006 (1,0 / 0,8 / 0,4 / 0,6); rótulos antigos continuam aceitos.

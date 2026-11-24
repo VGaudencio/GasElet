@@ -45,6 +45,8 @@ O **GasElet** faz essa cadeia inteira numa única tela por etapa:
 - o **metano** é calculado pelo modelo de decaimento de primeira ordem do IPCC, com a composição do resíduo, o tipo de aterro e a zona climática;
 - a **energia elétrica** depende do gerador escolhido, da potência instalada e da disponibilidade, e é traduzida em residências atendidas.
 
+No topo de todas as telas, um resumo do aterro mostra o cenário em uso: municípios, região, população, resíduo previsto e o período de operação numa linha do tempo.
+
 O cálculo fica numa **API em C++ (Drogon)**, e a interface é uma **SPA React** com gráficos e mapas por município. Cada usuário tem seus cenários salvos no servidor, sem banco de dados: um arquivo JSON por usuário.
 
 <table>
@@ -63,8 +65,8 @@ O cálculo fica numa **API em C++ (Drogon)**, e a interface é uma **SPA React**
 </table>
 
 <p align="center">
-  <img src="docs/readme/screenshots/graficos.webp" alt="Tela Metano: municípios no cenário, metano e resíduo de 2045 e curva anual de metano por município com a linha de encerramento do aterro" width="100%">
-  <br><sub><b>Metano</b>: metano gerado por ano, no total e por município, com a linha de encerramento do aterro. Cenário de exemplo usado em todas as capturas: 9 municípios em torno de Campina Grande (PB), aterro operando de 2012 a 2045.</sub>
+  <img src="docs/readme/screenshots/graficos.webp" alt="Tela Metano: resumo do aterro, metano gerado e recuperado em 2045 e curva anual de metano por município com a linha de encerramento do aterro" width="100%">
+  <br><sub><b>Metano</b>: no topo, o resumo do aterro; abaixo, metano gerado e recuperado no ano escolhido e a curva anual, no total e por município, com a linha de encerramento do aterro. Cenário de exemplo usado em todas as capturas: 9 municípios em torno de Campina Grande (PB), aterro operando de 2012 a 2045.</sub>
 </p>
 
 <details>
@@ -80,7 +82,7 @@ O cálculo fica numa **API em C++ (Drogon)**, e a interface é uma **SPA React**
     <td width="33%" valign="top">
       <img src="docs/readme/icons/cenarios.svg" width="40" alt=""><br>
       <b>Cenários</b><br>
-      <sub>Vários cenários por usuário, cada um com seus municípios, período e parâmetros. Criar, renomear e excluir pela barra lateral.</sub>
+      <sub>Vários cenários por usuário, cada um com seus municípios, período e parâmetros, resumidos no topo de cada tela. Criar, renomear e excluir pela barra lateral.</sub>
     </td>
     <td width="33%" valign="top">
       <img src="docs/readme/icons/populacao.svg" width="40" alt=""><br>
@@ -159,8 +161,8 @@ O cálculo fica numa **API em C++ (Drogon)**, e a interface é uma **SPA React**
 
 <table>
   <tr>
-    <td width="50%" valign="top"><img src="docs/readme/screenshots/inicio-cidades.webp" alt="Início: seleção de UF e município e tabela de população"><br><sub><b>Início</b>: escolha de UF e município e a população de cada município, ano a ano.</sub></td>
-    <td width="50%" valign="top"><img src="docs/readme/screenshots/inicio.webp" alt="Início: mapa, indicadores e população total do cenário"><br><sub><b>Cenário no mapa</b>: os municípios, o crescimento populacional e a população total até 2060.</sub></td>
+    <td width="50%" valign="top"><img src="docs/readme/screenshots/inicio-cidades.webp" alt="Início: seleção de UF e município e tabela de população"><br><sub><b>Início</b>: resumo do aterro, escolha de UF e município e a população de cada município, ano a ano.</sub></td>
+    <td width="50%" valign="top"><img src="docs/readme/screenshots/inicio.webp" alt="Início: mapa, indicadores e população total do cenário"><br><sub><b>Cenário no mapa</b>: os municípios, a população inicial e final e o crescimento até 2060.</sub></td>
   </tr>
   <tr>
     <td valign="top"><img src="docs/readme/screenshots/residuos.webp" alt="Configuração de resíduos sólidos urbanos"><br><sub><b>Resíduos</b>: coleta, curva per capita (aqui, a da Paraíba), vida útil, zona climática, MCF, discretização e composição.</sub></td>
@@ -168,7 +170,7 @@ O cálculo fica numa **API em C++ (Drogon)**, e a interface é uma **SPA React**
   </tr>
   <tr>
     <td valign="top"><img src="docs/readme/screenshots/energia.webp" alt="Comparativo de geradores"><br><sub><b>Geradores</b>: energia anual limitada pela potência instalada, residências atendidas e uso da potência.</sub></td>
-    <td valign="top"><img src="docs/readme/screenshots/energia-mapa.webp" alt="Energia por município e residências atendidas"><br><sub><b>Energia por município</b>: potencial de cada município no mapa e no gráfico, e residências atendidas por ano.</sub></td>
+    <td valign="top"><img src="docs/readme/screenshots/energia-mapa.webp" alt="Energia por município, residências atendidas e rodapé"><br><sub><b>Energia por município</b>: potencial de cada município no mapa e no gráfico, residências atendidas por ano e o rodapé com os créditos.</sub></td>
   </tr>
 </table>
 

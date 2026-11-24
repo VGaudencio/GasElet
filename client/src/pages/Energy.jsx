@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import ResumoAterro from "../components/ResumoAterro.jsx";
 import {
   Area,
   AreaChart,
@@ -939,7 +940,6 @@ export default function Energy() {
       <header className="home-header">
         <div>
           <h1>Energia elétrica</h1>
-          <p>Energia que o metano recuperado pode gerar, conforme o gerador escolhido.</p>
         </div>
 
         <div className="header-actions">
@@ -960,6 +960,8 @@ export default function Energy() {
           </div>
         </div>
       </header>
+
+      <ResumoAterro />
 
       {loadingLandfillCalc && (
         <small style={{ display: "block", marginBottom: 8 }}>

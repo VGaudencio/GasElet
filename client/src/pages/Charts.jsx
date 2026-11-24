@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import ResumoAterro from "../components/ResumoAterro.jsx";
 import { Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
 import { GeoJSON, MapContainer, TileLayer } from "react-leaflet";
 import L from "leaflet";
@@ -468,6 +469,7 @@ export default function Charts() {
         populacao: Number(calcRow?.pop) || 0,
         residuoTAno: Number(calcRow?.residuoTAno) || 0,
         metanoTAno: Number(calcRow?.metanoTAno) || 0,
+        metanoRecuperadoTAno: Number(calcRow?.metanoRecuperadoTAno ?? calcRow?.metanoTAno) || 0,
       };
     });
   }, [years, landfillCalc]);
@@ -640,7 +642,6 @@ export default function Charts() {
       <header className="home-header">
         <div>
           <h1>Metano</h1>
-          <p>Metano gerado pelo resíduo depositado no aterro, no total e por município.</p>
         </div>
 
         <div className="header-actions">
@@ -662,9 +663,7 @@ export default function Charts() {
         </div>
       </header>
 
-      <div className="charts-period-chip">
-        Aterro recebendo resíduo de {config.vidaInicio} a {config.vidaFim}; metano calculado até {CALC_END_YEAR}.
-      </div>
+      <ResumoAterro />
 
       {loadingLandfillCalc && (
         <small style={{ display: "block", marginBottom: 8 }}>
@@ -685,20 +684,21 @@ export default function Charts() {
       ) : (
         <>
           <div className="exp-metrics-row charts-metrics-row">
-            <div className="exp-metric-card glow">
-              <h3>Municípios</h3>
-              <div className="exp-mini-content">
-                <div className="exp-text">
-                  <h2>{rows.length}</h2>
-                </div>
-              </div>
-            </div>
-
             <div className="exp-metric-card is-gas">
               <h3>Metano gerado em {selectedYear}</h3>
               <div className="exp-mini-content">
                 <div className="exp-text">
                   <h2>{fmtTon(selectedYearTotals?.metanoTAno || 0)} t</h2>
+                </div>
+              </div>
+            </div>
+
+            <div className="exp-metric-card is-gas">
+              <h3>Metano recuperado em {selectedYear}</h3>
+              <div className="exp-mini-content">
+                <div className="exp-text">
+                  <h2>{fmtTon(selectedYearTotals?.metanoRecuperadoTAno || 0)} t</h2>
+                  <p>captação de {fmtTon(Number(config?.captacaoBiogasPct) || 0).replace(/,00$/, "")}% do biogás</p>
                 </div>
               </div>
             </div>

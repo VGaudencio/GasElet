@@ -1,0 +1,175 @@
+/* Resumo do aterro no topo das telas: identidade + linha do tempo à esquerda,
+   quatro números à direita, separados por fios. */
+
+.resumo-aterro {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.15fr) minmax(0, 2fr);
+  margin-bottom: 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.resumo-aterro p,
+.resumo-aterro dl,
+.resumo-aterro dd {
+  margin: 0;
+}
+
+/* Identidade do aterro */
+.resumo-identidade {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px 22px 14px;
+  border-right: 1px solid var(--line);
+  background: var(--tint);
+  border-radius: var(--radius) 0 0 var(--radius);
+}
+
+.resumo-rotulo,
+.resumo-dados dt {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.resumo-nome {
+  font-family: var(--font-cond);
+  font-weight: 600;
+  font-size: 1.45rem;
+  line-height: 1.15;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.resumo-operacao {
+  margin-top: 4px !important;
+  font-size: 0.88rem;
+  color: var(--ink-2);
+}
+
+/* Linha do tempo da operação */
+.resumo-linha {
+  margin-top: 12px;
+}
+
+.resumo-trilho {
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+  background: #dde3de;
+}
+
+.resumo-periodo {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 4px;
+  background: var(--manta);
+}
+
+.resumo-hoje {
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: 16px;
+  margin-left: -1px;
+  background: var(--ink);
+}
+
+.resumo-escala {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  font-size: 0.75rem;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.resumo-escala-hoje {
+  position: absolute;
+  transform: translateX(-50%);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* Números */
+.resumo-dados {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.resumo-dados > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 16px 20px;
+}
+
+.resumo-dados > div + div {
+  border-left: 1px solid var(--line-soft);
+}
+
+.resumo-dados dd {
+  font-family: var(--font-cond);
+  font-weight: 600;
+  font-size: 1.55rem;
+  line-height: 1.15;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.resumo-dados dd.resumo-contexto {
+  font-family: var(--font);
+  font-weight: 400;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: var(--ink-2);
+}
+
+@media (max-width: 1100px) {
+  .resumo-aterro {
+    grid-template-columns: 1fr;
+  }
+
+  .resumo-identidade {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .resumo-dados {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .resumo-dados > div {
+    padding: 12px 14px;
+  }
+
+  .resumo-dados > div + div {
+    border-left: 0;
+  }
+
+  .resumo-dados > div:nth-child(even) {
+    border-left: 1px solid var(--line-soft);
+  }
+
+  .resumo-dados > div:nth-child(n + 3) {
+    border-top: 1px solid var(--line-soft);
+  }
+
+  .resumo-identidade {
+    padding: 14px;
+  }
+
+  .resumo-dados dd {
+    font-size: 1.3rem;
+  }
+}

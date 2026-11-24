@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import ResumoAterro from "../components/ResumoAterro.jsx";
 import "../styles/Home.css";
 import { ResponsivePie } from "@nivo/pie";
 import {
@@ -613,7 +614,10 @@ export default function Home() {
     }
   };
 
-  const qtdCidades = rows.length;
+  const totalPopIni = useMemo(
+    () => rows.reduce((acc, r) => acc + toPopNumber(r.series?.[anoIni]), 0),
+    [rows, anoIni]
+  );
 
   const crescimentoPerc = useMemo(() => {
     if (rows.length === 0) return 0;
@@ -685,9 +689,10 @@ export default function Home() {
       <header className="home-header">
         <div>
           <h1>População do cenário</h1>
-          <p>Escolha os municípios que enviam resíduo ao aterro. A população de cada um vem das projeções municipais de 2000 a 2060.</p>
         </div>
       </header>
+
+      <ResumoAterro />
 
       {/* ===== Card principal ===== */}
       <div className="card glow expectancy-card two-col">
@@ -820,10 +825,11 @@ export default function Home() {
       {/* ===== Métricas logo abaixo do mapa ===== */}
       <div className="exp-metrics-row">
         <div className="exp-metric-card glow">
-          <h3>Municípios</h3>
+          <h3>População inicial</h3>
           <div className="exp-mini-content">
             <div className="exp-text">
-              <h2>{qtdCidades}</h2>
+              <h2>{totalPopIni.toLocaleString("pt-BR")}</h2>
+              <p className="green-text">em {anoIni}</p>
             </div>
           </div>
         </div>
@@ -841,7 +847,7 @@ export default function Home() {
         </div>
 
         <div className="exp-metric-card glow">
-          <h3>População total</h3>
+          <h3>População final</h3>
           <div className="exp-mini-content">
             <div className="exp-text">
               <p className="green-text">em {anoFin}</p>

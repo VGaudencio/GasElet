@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import ResumoAterro from "../components/ResumoAterro.jsx";
 import "../styles/Rsu.css";
 import { ResponsiveLine } from "@nivo/line";
 import { useDashboard } from "../context/DashboardContext.jsx";
@@ -499,9 +500,10 @@ export default function Rsu() {
      <header className="home-header">
         <div>
           <h1>Resíduos sólidos urbanos</h1>
-          <p>Parâmetros de coleta, do aterro e da composição do resíduo. As mudanças valem depois de clicar em Recalcular.</p>
         </div>
       </header>
+
+      <ResumoAterro />
 
       <main className="home-grid rsu-grid">
         {/* Card combinado: Captação + Produção */}
@@ -793,7 +795,12 @@ export default function Rsu() {
             </div>
 
             <div className="rsu-comp-actions">
-              <button className="btn-primary" type="button" onClick={onAtualizar}>
+              <button
+                className="btn-primary"
+                type="button"
+                onClick={onAtualizar}
+                title="Aplica todos os parâmetros desta tela ao cálculo"
+              >
                 Recalcular
               </button>
 
