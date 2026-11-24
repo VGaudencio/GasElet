@@ -13,6 +13,7 @@ e versionamento semântico.
 - documentação técnica em `docs/API.md`, `docs/ARCHITECTURE.md` e `docs/DEPLOY.md`.
 - arquivos de governança: `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`.
 - fallback de persistência local e flush explícito no logout para reduzir perda de estado.
+- geração per capita do SNIS (campo `metodoPerCapita = "snis"`, padrão): curvas logísticas integradas por Runge-Kutta 4 de 2000 a 2065, ajustadas à coleta per capita de 2003–2021 (Co119/Co164). Cada município usa a curva da sua UF quando os dados do estado são confiáveis (15 UFs) e a da região nos demais casos. Ajuste, critérios e validação em `analise_sinis/`.
 
 ### Changed
 
@@ -25,6 +26,7 @@ e versionamento semântico.
 - campo "Temperatura na região anaeróbica" substituído por "Zona climática (IPCC)", que preenche o k padrão da Tab. 3.3 do IPCC 2006 (tropical úmido 0,17; tropical seco 0,065; temperado úmido 0,09; temperado seco 0,05).
 - gráficos: anos em múltiplos de 5, eixos em formato compacto pt-BR, tooltips com separador de milhar, linha de encerramento do aterro no gráfico de metano e CH₄ também em m³.
 - tabela de RSU mostra a geração per capita usada em cada ano; Lo exibido também em m³/t.
+- massa de RSU do cenário passa a ser a soma dos municípios, cada um com a per capita da sua UF; as linhas do cálculo trazem `perCapita`. As retas regionais anteriores (ABRELPE 2020) continuam disponíveis como `metodoPerCapita = "abrelpe2020"` e reproduzem os resultados antigos.
 
 - DOC de metal, vidro e "outros" passa de 0,01 para 0 (inertes, IPCC 2006 Tab. 2.4).
 - zona climática "Temperado seco" (k 0,05) passa a indicar que não ocorre no Brasil.

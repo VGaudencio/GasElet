@@ -131,9 +131,14 @@ Campo `config.metodoFod` (discretização anual do decaimento de primeira ordem)
 - `ipcc2006`: atraso de 6 meses da planilha IPCC 2006. A decomposição começa no ano seguinte ao da deposição;
 - `legado`: fórmula usada até out/2026 (`k · M · L0 · e^−k(t−x)`, DOC 0,01 para metal/vidro/outros). Reproduz resultados antigos; superestima o total em `k/(1 − e^−k)`.
 
+Campo `config.metodoPerCapita` (geração per capita de RSU, kg/hab/ano):
+
+- `snis` (padrão): curvas logísticas `dg/dt = r·g·(1 − g/K)` ajustadas à coleta per capita do SNIS 2003–2021 e integradas por Runge-Kutta 4 de 2000 a 2065 (fora desse intervalo, o valor do extremo). Cada linha de `rows` usa a curva da sua `uf` quando os dados do estado são confiáveis e a da região da UF nos demais casos; `config.regiao` só vale para população sem município (`popBase`). Parâmetros e critérios em `analise_sinis/`;
+- `abrelpe2020`: retas regionais anteriores (Panorama ABRELPE 2020, 2010–2019) aplicadas com `config.regiao`. Reproduz resultados antigos.
+
 Response (`200`):
 
-- objeto com `status: "ok"`, séries totais, séries por cidade e parâmetros derivados (`doc`, `mcf`, `loTonPerTon`, `captacaoBiogasPct`, `metodoFod`, etc.). Cada linha anual traz `metanoTAno` (gerado) e `metanoRecuperadoTAno` (gerado × captação).
+- objeto com `status: "ok"`, séries totais, séries por cidade e parâmetros derivados (`doc`, `mcf`, `loTonPerTon`, `captacaoBiogasPct`, `metodoFod`, `metodoPerCapita`, etc.). Cada linha anual traz `perCapita` (kg/hab/ano; no total, média ponderada pela população), `residuoTAno`, `metanoTAno` (gerado) e `metanoRecuperadoTAno` (gerado × captação).
 
 ## Endpoint de JSON protegido
 

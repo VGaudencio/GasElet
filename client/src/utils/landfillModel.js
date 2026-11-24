@@ -2,6 +2,8 @@
 // qualquer mudança aqui precisa ser replicada no backend, que é a fonte dos
 // valores de metano usados nos gráficos.
 
+import { DEFAULT_PER_CAPITA_METHOD, resolvePerCapitaMethod } from "./rsuProduction.js";
+
 export const DEFAULT_ANO_INICIAL = 2000;
 export const DEFAULT_ANO_FINAL = 2060;
 
@@ -53,6 +55,7 @@ function docInertes(metodoFod) {
 
 export const DEFAULT_LANDFILL_CONFIG = {
   regiao: "Nordeste",
+  metodoPerCapita: DEFAULT_PER_CAPITA_METHOD,
   geracaoKgAnoHab: 328.3,
   taxaColetaPct: 100,
   kMetano: 0.05,
@@ -133,6 +136,7 @@ export function normalizeLandfillConfig(config) {
 
   const out = {
     regiao: String(merged.regiao || d.regiao),
+    metodoPerCapita: resolvePerCapitaMethod(merged.metodoPerCapita),
     geracaoKgAnoHab: toNumber(merged.geracaoKgAnoHab, d.geracaoKgAnoHab),
     taxaColetaPct: toNumber(merged.taxaColetaPct, d.taxaColetaPct),
     kMetano: toNumber(merged.kMetano, d.kMetano),

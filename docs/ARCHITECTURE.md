@@ -30,8 +30,8 @@ O sistema é composto por:
 
 O backend centraliza a lógica analítica:
 
-- coeficientes regionais e geração per capita;
-- cálculo de RSU por ano;
+- geração per capita por UF/região (`controllers/PerCapita.cpp`, espelhado em `client/src/utils/rsuProduction.js`; parâmetros gerados por `analise_sinis/scripts/gerar_codigo.py`);
+- cálculo de RSU por ano, somando os municípios do cenário;
 - composição do resíduo e parâmetros de decaimento;
 - cálculo de emissões anuais totais e por cidade;
 - resposta pronta para gráficos do frontend.

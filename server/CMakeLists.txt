@@ -49,6 +49,7 @@ add_executable(${PROJECT_NAME}
   controllers/wschat.cpp
   controllers/AuthController.cpp
   controllers/UserDashboard.cpp
+  controllers/PerCapita.cpp
   filters/AuthFilter.cpp
 
 

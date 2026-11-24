@@ -2,7 +2,14 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import "../styles/Rsu.css";
 import { ResponsiveLine } from "@nivo/line";
 import { useDashboard } from "../context/DashboardContext.jsx";
-import { calcRsuTonAno, getPerCapKgByRegionYear } from "../utils/rsuProduction.js";
+import {
+  DEFAULT_PER_CAPITA_METHOD,
+  PER_CAPITA_METHODS,
+  calcRsuTonAno,
+  getPerCapKgAnoHab,
+  resolvePerCapitaMethod,
+  snisCurveFor,
+} from "../utils/rsuProduction.js";
 import { fmtAxis, fmtNumber, yearTicks } from "../utils/chartFormat.js";
 import {
   DEFAULT_ANO_FINAL,
@@ -48,6 +55,7 @@ function makeDefaultDraft() {
     // Captação RSU
     taxaColetaPct: null,
     regiao: "Nordeste",
+    metodoPerCapita: DEFAULT_PER_CAPITA_METHOD,
     geracaoKgAnoHab: null,
     vidaInicio: DEFAULT_ANO_INICIAL,
     vidaFim: DEFAULT_ANO_FINAL,
@@ -85,6 +93,7 @@ function isDefaultConfig(config) {
   const base = makeDefaultDraft();
   return (
     String(config.regiao) === base.regiao &&
+    resolvePerCapitaMethod(config.metodoPerCapita) === base.metodoPerCapita &&
     Number(config.geracaoKgAnoHab) === base.geracaoKgAnoHab &&
     Number(config.taxaColetaPct) === base.taxaColetaPct &&
     Number(config.vidaInicio) === base.vidaInicio &&
@@ -170,13 +179,17 @@ export default function Rsu() {
   const refreshAttemptedRef = useRef(new Set());
   const prevRegiaoRef = useRef(makeDefaultDraft().regiao);
 
-  const scenarioTotals = useMemo(() => {
+  const scenarioRows = useMemo(() => {
     const scenario = scenarios.find(
       (s) => String(s.id) === String(currentScenarioId)
     );
-    if (!scenario?.rows?.length) return null;
+    return scenario?.rows?.length ? scenario.rows : [];
+  }, [scenarios, currentScenarioId]);
+
+  const scenarioTotals = useMemo(() => {
+    if (!scenarioRows.length) return null;
     const totals = {};
-    for (const row of scenario.rows) {
+    for (const row of scenarioRows) {
       const series = row.series || {};
       for (const [yearKey, value] of Object.entries(series)) {
         const year = Number(yearKey);
@@ -186,7 +199,7 @@ export default function Rsu() {
       }
     }
     return Object.keys(totals).length ? totals : null;
-  }, [scenarios, currentScenarioId]);
+  }, [scenarioRows]);
 
   useEffect(() => {
     if (!currentScenarioId) return;
@@ -389,23 +402,42 @@ export default function Rsu() {
     setModel(sanitized);
   };
 
+  // Cada município usa a per capita da sua UF (ou região); sem municípios no cenário,
+  // a população vem de popBase e crescimento, com a região selecionada.
+  // Espelha computeRsuSeries em server/controllers/UserDashboard.cpp.
   const series = useMemo(() => {
     const years = rangeYears(model.vidaInicio, model.vidaFim);
     const growth = model.popCrescimentoAnualPct / 100;
+    const base = {
+      metodo: resolvePerCapitaMethod(model.metodoPerCapita),
+      regiao: model.regiao,
+      coletaPct: model.taxaColetaPct,
+      fallbackKgAnoHab: model.geracaoKgAnoHab,
+    };
 
     const rows = years.map((ano, i) => {
-      const popFromScenario = scenarioTotals?.[ano];
-      const pop = Number.isFinite(popFromScenario)
-        ? popFromScenario
-        : model.popBase * Math.pow(1 + growth, i);
-      const rsuTAno = calcRsuTonAno({
-        regiao: model.regiao,
-        coletaPct: model.taxaColetaPct,
-        ano,
-        populacao: pop,
-        fallbackKgAnoHab: model.geracaoKgAnoHab,
-      });
-      const perCapita = getPerCapKgByRegionYear(model.regiao, ano, model.geracaoKgAnoHab);
+      const yearKey = String(ano);
+      let found = false;
+      let pop = 0;
+      let rsuTAno = 0;
+      let perCapPop = 0;
+      for (const row of scenarioRows) {
+        const rowSeries = row.series || {};
+        if (!Object.prototype.hasOwnProperty.call(rowSeries, yearKey)) continue;
+        const popRow = Number(rowSeries[yearKey]) || 0;
+        const g = getPerCapKgAnoHab({ ...base, uf: row.uf, ano });
+        found = true;
+        pop += popRow;
+        perCapPop += g * popRow;
+        rsuTAno += calcRsuTonAno({ ...base, uf: row.uf, ano, populacao: popRow });
+      }
+
+      if (!found) {
+        pop = model.popBase * Math.pow(1 + growth, i);
+        rsuTAno = calcRsuTonAno({ ...base, uf: null, ano, populacao: pop });
+      }
+      const perCapita =
+        found && pop > 0 ? perCapPop / pop : getPerCapKgAnoHab({ ...base, uf: null, ano });
       return { ano, pop, rsuTAno, perCapita };
     });
 
@@ -419,7 +451,22 @@ export default function Rsu() {
     const ticks = yearTicks(years.map(Number)).map(String);
 
     return { rows, nivo, ticks };
-  }, [model, scenarioTotals]);
+  }, [model, scenarioRows]);
+
+  // Curva per capita aplicada a cada UF do cenário (só no método SNIS).
+  const perCapitaBases = useMemo(() => {
+    if (resolvePerCapitaMethod(draft.metodoPerCapita) !== "snis") return [];
+    const ufs = [...new Set(scenarioRows.map((r) => String(r.uf || "").toUpperCase()).filter(Boolean))].sort();
+    return ufs.map((uf) => {
+      const curve = snisCurveFor(uf, draft.regiao);
+      if (!curve) return { uf, texto: "sem curva (usa o valor padrão)" };
+      if (curve.base === "uf") return { uf, texto: "curva do estado" };
+      return {
+        uf,
+        texto: `curva da região ${curve.regiao}${curve.motivo ? ` (${curve.motivo})` : ""}`,
+      };
+    });
+  }, [draft.metodoPerCapita, draft.regiao, scenarioRows]);
 
   useEffect(() => {
     if (!currentScenarioId) return;
@@ -485,7 +532,35 @@ export default function Rsu() {
                 </div>
 
                 <div className="field">
-                  <label>Região (geração RSU padrão)</label>
+                  <label>Geração per capita</label>
+                  <select
+                    value={resolvePerCapitaMethod(draft.metodoPerCapita)}
+                    title={
+                      PER_CAPITA_METHODS.find(
+                        (m) => m.value === resolvePerCapitaMethod(draft.metodoPerCapita)
+                      )?.descricao
+                    }
+                    onChange={(e) => setDraft((d) => ({ ...d, metodoPerCapita: e.target.value }))}
+                  >
+                    {PER_CAPITA_METHODS.map((m) => (
+                      <option key={m.value} value={m.value} title={m.descricao}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                  {perCapitaBases.length > 0 && (
+                    <small className="field-hint">
+                      {perCapitaBases.map((b) => `${b.uf}: ${b.texto}`).join(" · ")}
+                    </small>
+                  )}
+                </div>
+
+                <div className="field">
+                  <label>
+                    {resolvePerCapitaMethod(draft.metodoPerCapita) === "snis"
+                      ? "Região (sem município no cenário)"
+                      : "Região (geração RSU padrão)"}
+                  </label>
                   <select value={draft.regiao} onChange={(e) => setDraft((d) => ({ ...d, regiao: e.target.value }))}>
                     {REGIOES.map((r) => (
                       <option key={r.id} value={r.id}>

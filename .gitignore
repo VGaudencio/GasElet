@@ -35,3 +35,7 @@ server/certs/
 # Documentos (tese, revisões) — não versionar
 *.docx
 ~$*
+
+# Python
+__pycache__/
+*.pyc

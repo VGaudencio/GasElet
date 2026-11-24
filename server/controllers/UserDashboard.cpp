@@ -1,4 +1,5 @@
 #include "UserDashboard.h"
+#include "PerCapita.h"
 #include <drogon/drogon.h>
 #include <algorithm>
 #include <cmath>
@@ -35,19 +36,6 @@ namespace {
         Ipcc2000,  // GPG 2000, Eq. 5.1 (fator A = (1 - e^-k)/k); padrão
         Ipcc2006,  // IPCC 2006: atraso de 6 meses, decompõe a partir do ano seguinte
         Legado,    // até out/2026: k·M·L0·e^-k(t-x), sem normalização
-    };
-
-    struct RegionCoeff {
-        double a;
-        double b;
-    };
-
-    const std::unordered_map<std::string, RegionCoeff> kRegionCoeffs = {
-        {"Norte", {-7753.0, 4.0}},
-        {"Nordeste", {-4588.33, 2.44}},
-        {"Centro-Oeste", {1258.333, -0.444}},
-        {"Sudeste", {-10093.667, 5.222}},
-        {"Sul", {-3985.333, 2.111}},
     };
 
     struct Composition {
@@ -178,23 +166,64 @@ namespace {
         return merged;
     }
 
-    double getPerCapKgByRegionYear(const std::string& regiao, int ano, double fallbackKgAnoHab)
+    // Parâmetros da massa anual de RSU (espelha calcRsuTonAno em client/src/utils/rsuProduction.js).
+    struct RsuParams {
+        percapita::Metodo metodo = percapita::Metodo::Snis;
+        std::string regiao;            // usada quando o município não tem UF e no método legado
+        double taxaColetaPct = kDefaultTaxaColetaPct;
+        double perCapFallback = kDefaultGeracaoKgAnoHab;
+    };
+
+    RsuParams parseRsuParams(const Json::Value& config)
     {
-        const auto it = kRegionCoeffs.find(regiao);
-        if (it == kRegionCoeffs.end()) return fallbackKgAnoHab;
-        return it->second.a + it->second.b * static_cast<double>(ano);
+        RsuParams p;
+        p.metodo = percapita::metodoFromString(config.get("metodoPerCapita", "").asString());
+        p.regiao = config.get("regiao", "Nordeste").asString();
+        p.taxaColetaPct = parseJsonNumber(config["taxaColetaPct"], kDefaultTaxaColetaPct);
+        p.perCapFallback = parseJsonNumber(config["geracaoKgAnoHab"], kDefaultGeracaoKgAnoHab);
+        return p;
     }
 
-    double calcRsuTonAno(const std::string& regiao,
-                         double taxaColetaPct,
-                         int ano,
-                         double populacao,
-                         double fallbackKgAnoHab)
+    double perCapKgAnoHab(const RsuParams& p, const std::string& uf, int ano)
     {
-        const double perCapKgAnoHab = getPerCapKgByRegionYear(regiao, ano, fallbackKgAnoHab);
-        const double coleta = taxaColetaPct / 100.0;
-        const double rtuKgAno = coleta * perCapKgAnoHab * populacao;
-        return rtuKgAno / 1000.0;
+        return percapita::kgAnoHab(p.metodo, uf, p.regiao, ano, p.perCapFallback);
+    }
+
+    double calcRsuTonAno(const RsuParams& p, double perCapita, double populacao)
+    {
+        const double coleta = p.taxaColetaPct / 100.0;
+        return coleta * perCapita * populacao / 1000.0;
+    }
+
+    // Soma dos municípios do cenário em um ano, cada um com a per capita da sua UF.
+    struct ScenarioYear {
+        bool found = false;      // algum município tem o ano na série
+        double pop = 0.0;
+        double residuo = 0.0;    // t/ano
+        double perCapita = 0.0;  // kg/hab/ano, média ponderada pela população
+    };
+
+    ScenarioYear scenarioYear(const Json::Value& rows, const RsuParams& p, int year)
+    {
+        ScenarioYear out;
+        if (!rows.isArray()) return out;
+
+        const auto yearKey = std::to_string(year);
+        double perCapPop = 0.0;
+        for (const auto& row : rows) {
+            if (!row.isObject()) continue;
+            const auto& series = row["series"];
+            if (!series.isObject() || !series.isMember(yearKey)) continue;
+
+            const double pop = parseJsonNumber(series[yearKey], 0.0);
+            const double g = perCapKgAnoHab(p, row.get("uf", "").asString(), year);
+            out.found = true;
+            out.pop += pop;
+            out.residuo += calcRsuTonAno(p, g, pop);
+            perCapPop += g * pop;
+        }
+        out.perCapita = out.pop > 0.0 ? perCapPop / out.pop : perCapKgAnoHab(p, "", year);
+        return out;
     }
 
     Composition parseComposition(const Json::Value& config)
@@ -279,47 +308,6 @@ namespace {
         return mcf * doc * kDocf * kMethaneFraction * (16.0 / 12.0);
     }
 
-    std::map<int, double> sumScenarioPopulation(const Json::Value& scenario)
-    {
-        std::map<int, double> totals;
-        const auto& rows = scenario["rows"];
-        if (!rows.isArray()) return totals;
-
-        for (const auto& row : rows) {
-            const auto& series = row["series"];
-            if (!series.isObject()) continue;
-            for (const auto& yearKey : series.getMemberNames()) {
-                const int year = std::atoi(yearKey.c_str());
-                const double pop = parseJsonNumber(series[yearKey], 0.0);
-                totals[year] += pop;
-            }
-        }
-        return totals;
-    }
-
-    std::map<int, double> sumPopulationFromRows(const Json::Value& rows,
-                                                int anoInicial,
-                                                int anoFinal)
-    {
-        std::map<int, double> totals;
-        if (!rows.isArray()) return totals;
-
-        for (const auto& row : rows)
-        {
-            const auto& series = row["series"];
-            if (!series.isObject()) continue;
-
-            for (int year = anoInicial; year <= anoFinal; ++year)
-            {
-                const auto yearKey = std::to_string(year);
-                const double pop = parseJsonNumber(series[yearKey], 0.0);
-                totals[year] += pop;
-            }
-        }
-
-        return totals;
-    }
-
     // Metano gerado por ano (t CH4/ano). Cada lote M(x) contribui com
     //   M(x) · L0 · f · e^(-k (t - x - atraso)),   t >= x + atraso,
     // em que f é a fração do lote que decompõe no primeiro ano de reação:
@@ -380,36 +368,35 @@ namespace {
     }
 
     Json::Value computeRsuSeries(const Json::Value& config,
-                                 const std::map<int, double>& totals)
+                                 const Json::Value& scenarioRows)
     {
         int vidaInicio = parseJsonInt(config["vidaInicio"], kDefaultAnoInicial);
         int vidaFim = parseJsonInt(config["vidaFim"], kDefaultAnoFinal);
         if (vidaFim < vidaInicio) vidaFim = vidaInicio;
 
-        const std::string regiao = config.get("regiao", "Nordeste").asString();
-        const double perCapFallback = parseJsonNumber(config["geracaoKgAnoHab"], kDefaultGeracaoKgAnoHab);
-        const double taxaColetaPct = parseJsonNumber(config["taxaColetaPct"], kDefaultTaxaColetaPct);
+        const RsuParams params = parseRsuParams(config);
         const double popBase = parseJsonNumber(config["popBase"], 0.0);
         const double growthPct = parseJsonNumber(config["popCrescimentoAnualPct"], 0.0);
         const double growth = growthPct / 100.0;
 
         Json::Value rows(Json::arrayValue);
         for (int i = 0, year = vidaInicio; year <= vidaFim; ++year, ++i) {
-            double pop = 0.0;
-            auto it = totals.find(year);
-            if (it != totals.end()) {
-                pop = it->second;
-            } else {
+            const ScenarioYear sy = scenarioYear(scenarioRows, params, year);
+            double pop = sy.pop;
+            double rsuTAno = sy.residuo;
+            double perCapita = sy.perCapita;
+            if (!sy.found) {
                 pop = popBase * std::pow(1.0 + growth, i);
+                perCapita = perCapKgAnoHab(params, "", year);
+                rsuTAno = calcRsuTonAno(params, perCapita, pop);
             }
-
-            const double rsuTAno = calcRsuTonAno(regiao, taxaColetaPct, year, pop, perCapFallback);
 
             Json::Value row;
             row["ano"] = year;
             row["pop"] = pop;
             row["rsuTAno"] = rsuTAno;
-            row["source"] = it != totals.end() ? "scenario" : "model";
+            row["perCapita"] = perCapita;
+            row["source"] = sy.found ? "scenario" : "model";
             rows.append(row);
         }
 
@@ -425,9 +412,7 @@ namespace {
         if (anoFinal < anoInicial) anoFinal = anoInicial;
         if (maxYear < anoFinal) maxYear = anoFinal;
 
-        const std::string regiao = config.get("regiao", "Nordeste").asString();
-        const double taxaColetaPct = parseJsonNumber(config["taxaColetaPct"], kDefaultTaxaColetaPct);
-        const double perCapFallback = parseJsonNumber(config["geracaoKgAnoHab"], kDefaultGeracaoKgAnoHab);
+        const RsuParams params = parseRsuParams(config);
         const double popBase = parseJsonNumber(config["popBase"], 0.0);
         const double growthPct = parseJsonNumber(config["popCrescimentoAnualPct"], 0.0);
         const double growth = growthPct / 100.0;
@@ -443,24 +428,26 @@ namespace {
         const double loTonPerTon = computeLoTonPerTon(comp, mcf, docInertes);
         const double loM3PerTon = (kTonPerM3Methane > 0.0) ? (loTonPerTon / kTonPerM3Methane) : 0.0;
 
-        const auto totalPopByYear = sumPopulationFromRows(rows, anoInicial, maxYear);
         std::map<int, double> totalResidueByYear;
 
         Json::Value totalRows(Json::arrayValue);
         for (int i = 0, year = anoInicial; year <= maxYear; ++year, ++i)
         {
-            const auto it = totalPopByYear.find(year);
-            const bool fromScenario = it != totalPopByYear.end() && it->second > 0.0;
-            const double pop = fromScenario ? it->second : (popBase * std::pow(1.0 + growth, i));
+            const ScenarioYear sy = scenarioYear(rows, params, year);
+            const bool fromScenario = sy.found && sy.pop > 0.0;
+            const double pop = fromScenario ? sy.pop : (popBase * std::pow(1.0 + growth, i));
+            const double perCapita = fromScenario ? sy.perCapita : perCapKgAnoHab(params, "", year);
             const bool aterroAberto = year <= anoFinal;
-            const double residue = aterroAberto
-                ? calcRsuTonAno(regiao, taxaColetaPct, year, pop, perCapFallback)
-                : 0.0;
+            double residue = 0.0;
+            if (aterroAberto) {
+                residue = fromScenario ? sy.residuo : calcRsuTonAno(params, perCapita, pop);
+            }
             totalResidueByYear[year] = residue;
 
             Json::Value rowOut;
             rowOut["ano"] = year;
             rowOut["pop"] = pop;
+            rowOut["perCapita"] = perCapita;
             rowOut["residuoTAno"] = residue;
             if (!aterroAberto) {
                 rowOut["source"] = "closed";
@@ -506,15 +493,15 @@ namespace {
             {
                 const auto yearKey = std::to_string(year);
                 const double pop = parseJsonNumber(series[yearKey], 0.0);
+                const double perCapita = perCapKgAnoHab(params, uf, year);
                 const bool aterroAberto = year <= anoFinal;
-                const double residue = aterroAberto
-                    ? calcRsuTonAno(regiao, taxaColetaPct, year, pop, perCapFallback)
-                    : 0.0;
+                const double residue = aterroAberto ? calcRsuTonAno(params, perCapita, pop) : 0.0;
                 cityResidueByYear[year] = residue;
 
                 Json::Value rowOut;
                 rowOut["ano"] = year;
                 rowOut["pop"] = pop;
+                rowOut["perCapita"] = perCapita;
                 rowOut["residuoTAno"] = residue;
                 rowOut["source"] = aterroAberto ? "scenario" : "closed";
                 cityRows.append(rowOut);
@@ -553,6 +540,7 @@ namespace {
         out["maxYear"] = maxYear;
         out["kMetano"] = kMetano;
         out["metodoFod"] = fodMethodName(metodoFod);
+        out["metodoPerCapita"] = percapita::metodoName(params.metodo);
         out["doc"] = doc;
         out["mcf"] = mcf;
         out["captacaoBiogasPct"] = captacao * 100.0;
@@ -570,12 +558,10 @@ namespace {
         auto& rsuByScenario = root["rsuByScenario"];
         if (!scenarios.isArray() || !rsuByScenario.isObject()) return;
 
-        std::unordered_map<std::string, std::map<int, double>> totalsByScenario;
         std::unordered_map<std::string, Json::Value> rowsByScenario;
         for (const auto& scenario : scenarios) {
             const std::string id = scenario.get("id", "").asString();
             if (id.empty()) continue;
-            totalsByScenario[id] = sumScenarioPopulation(scenario);
             rowsByScenario[id] = scenario["rows"];
         }
 
@@ -586,15 +572,12 @@ namespace {
             const auto& config = entry["config"];
             if (!config.isObject()) continue;
 
-            const auto it = totalsByScenario.find(id);
-            const std::map<int, double> emptyTotals;
-            const auto& totals = (it != totalsByScenario.end()) ? it->second : emptyTotals;
-            entry["series"] = computeRsuSeries(config, totals);
+            const auto rowsIt = rowsByScenario.find(id);
+            const auto& scenarioRows = (rowsIt != rowsByScenario.end()) ? rowsIt->second : emptyRows;
+            entry["series"] = computeRsuSeries(config, scenarioRows);
 
             const int anoInicial = parseJsonInt(config["vidaInicio"], kDefaultAnoInicial);
             const int anoFinal = parseJsonInt(config["vidaFim"], kDefaultAnoFinal);
-            const auto rowsIt = rowsByScenario.find(id);
-            const auto& scenarioRows = (rowsIt != rowsByScenario.end()) ? rowsIt->second : emptyRows;
 
             entry["landfillCalc"] = computeLandfillCalculation(
                 config,
