@@ -1,30 +1,9 @@
 // Geração per capita de RSU (kg/hab/ano) e massa anual destinada ao aterro.
+// Curvas logísticas ajustadas à coleta per capita do SNIS 2003–2021 (Co119/Co164),
+// dg/dt = r·g·(1 − g/K), integradas por Runge-Kutta 4 de 2000 a 2065: a da UF do
+// município quando os dados do estado são confiáveis; senão, a da região.
 // Espelha server/controllers/PerCapita.cpp: qualquer mudança aqui precisa ser
 // replicada no backend, que calcula os valores usados nos gráficos.
-
-export const PER_CAPITA_METHODS = [
-  {
-    value: "snis",
-    label: "SNIS — curva logística (RK4)",
-    descricao:
-      "Coleta per capita do SNIS 2003–2021 (Co119/Co164, kg por habitante atendido). " +
-      "dg/dt = r·g·(1 − g/K), integrada por Runge-Kutta 4 de 2000 a 2065. " +
-      "Usa a curva da UF do município quando os dados do estado são confiáveis; senão, a da região.",
-  },
-  {
-    value: "abrelpe2020",
-    label: "ABRELPE 2020 — reta por região (legado)",
-    descricao:
-      "Reta entre a geração per capita regional de 2010 e 2019 do Panorama ABRELPE 2020. " +
-      "Use só para reproduzir resultados anteriores a nov/2026.",
-  },
-];
-
-export const DEFAULT_PER_CAPITA_METHOD = "snis";
-
-export function resolvePerCapitaMethod(value) {
-  return PER_CAPITA_METHODS.some((m) => m.value === value) ? value : DEFAULT_PER_CAPITA_METHOD;
-}
 
 export const UF_REGIAO = {
   AC: "Norte", AM: "Norte", AP: "Norte", PA: "Norte", RO: "Norte", RR: "Norte", TO: "Norte",
@@ -38,17 +17,6 @@ export const UF_REGIAO = {
 export function regiaoDaUf(uf) {
   return UF_REGIAO[String(uf || "").trim().toUpperCase()] || null;
 }
-
-// Legado: reta por dois pontos (2010 e 2019) do Gráfico 2 do Panorama ABRELPE 2020.
-// Coeficientes mantidos como estavam, inclusive os do Nordeste truncados (2,44 em vez de
-// 22/9), para reproduzir os resultados antigos.
-const ABRELPE_2020 = {
-  Norte: { a: -7753.0, b: 4.0 },
-  Nordeste: { a: -4588.33, b: 2.44 },
-  "Centro-Oeste": { a: 1258.333, b: -0.444 },
-  Sudeste: { a: -10093.667, b: 5.222 },
-  Sul: { a: -3985.333, b: 2.111 },
-};
 
 // Curvas logísticas ajustadas ao SNIS (analise_sinis/scripts/ajuste_logistico.py).
 // g(T0) = G0; fora de 2000–2065 o valor fica constante no extremo.
@@ -141,14 +109,8 @@ export function snisCurveFor(uf, regiao) {
 
 const snisCache = new Map();
 
-export function getPerCapKgAnoHab({ metodo, uf, regiao, ano, fallbackKgAnoHab = 0 }) {
+export function getPerCapKgAnoHab({ uf, regiao, ano, fallbackKgAnoHab = 0 }) {
   const year = Number(ano);
-  if (resolvePerCapitaMethod(metodo) === "abrelpe2020") {
-    const coeff = ABRELPE_2020[regiao];
-    if (!coeff) return Number(fallbackKgAnoHab) || 0;
-    return coeff.a + coeff.b * year;
-  }
-
   const curve = snisCurveFor(uf, regiao);
   if (!curve || !Number.isFinite(year)) return Number(fallbackKgAnoHab) || 0;
   const key = `${curve.base === "uf" ? curve.uf : curve.regiao}|${year}`;
@@ -156,8 +118,8 @@ export function getPerCapKgAnoHab({ metodo, uf, regiao, ano, fallbackKgAnoHab = 
   return snisCache.get(key);
 }
 
-export function calcRsuTonAno({ metodo, uf, regiao, coletaPct, ano, populacao, fallbackKgAnoHab = 0 }) {
-  const perCapKgAnoHab = getPerCapKgAnoHab({ metodo, uf, regiao, ano, fallbackKgAnoHab });
+export function calcRsuTonAno({ uf, regiao, coletaPct, ano, populacao, fallbackKgAnoHab = 0 }) {
+  const perCapKgAnoHab = getPerCapKgAnoHab({ uf, regiao, ano, fallbackKgAnoHab });
   const coleta = (Number(coletaPct) || 0) / 100;
   const pop = Number(populacao) || 0;
   return (coleta * perCapKgAnoHab * pop) / 1000;

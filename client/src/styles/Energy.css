@@ -15,7 +15,8 @@
 }
 
 .energy-generator-header p {
-  margin: 4px 0 0;
+  margin: 6px 0 0;
+  max-width: 90ch;
   color: var(--text-muted);
 }
 
@@ -42,8 +43,8 @@
 
 .energy-generator-list-wrap {
   margin-top: 14px;
-  border: 1px solid var(--border-map);
-  border-radius: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
   overflow: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -55,28 +56,31 @@
 }
 
 .energy-generator-list thead th {
-  background: #eef6f0;
-  color: var(--text-main);
+  background: var(--tint);
+  color: var(--ink-2);
+  font-size: 0.8rem;
+  font-weight: 600;
   text-align: left;
-  padding: 10px 12px;
-  border-bottom: 1px solid #dfe9e3;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
   position: sticky;
   top: 0;
   z-index: 1;
 }
 
 .energy-generator-list tbody td {
-  padding: 10px 12px;
-  border-bottom: 1px solid #f0f4f1;
-  color: #0f241b;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
 .energy-generator-list tbody tr:hover {
-  background: #f7fbf7;
+  background: #f8f9f8;
 }
 
 .energy-generator-list tbody tr.is-selected {
-  background: #e9f6eb;
+  background: var(--manta-50);
 }
 
 .energy-empty {
@@ -106,16 +110,13 @@
   margin-top: 12px;
   width: 100%;
   height: 320px;
-  border: 1px solid var(--border-map);
-  border-radius: 12px;
-  padding: 8px 8px 2px;
-  background: #fcfefd;
+  padding: 4px 0 0;
 }
 
 .energy-compare-table-wrap {
   margin-top: 14px;
-  border: 1px solid var(--border-map);
-  border-radius: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
   overflow: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -127,32 +128,35 @@
 }
 
 .energy-compare-table thead th {
-  background: #eef6f0;
-  color: var(--text-main);
+  background: var(--tint);
+  color: var(--ink-2);
+  font-size: 0.8rem;
+  font-weight: 600;
   text-align: left;
-  padding: 10px 12px;
-  border-bottom: 1px solid #dfe9e3;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
   position: sticky;
   top: 0;
   z-index: 1;
 }
 
 .energy-compare-table tbody td {
-  padding: 10px 12px;
-  border-bottom: 1px solid #f0f4f1;
-  color: #0f241b;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
 .energy-compare-table tbody tr:hover {
-  background: #f7fbf7;
+  background: #f8f9f8;
 }
 
 .energy-metrics-row {
-  margin-top: 18px;
+  margin-top: 16px;
 }
 
-.energy-grid {
-  margin-top: 18px;
+.home-grid.energy-grid {
+  margin-top: 16px;
   grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
@@ -187,28 +191,19 @@
 .energy-total-chart-wrap {
   width: 100%;
   height: 360px;
-  border: 1px solid var(--border-map);
-  border-radius: 12px;
-  padding: 8px 8px 2px;
-  background: #fcfefd;
+  padding: 4px 0 0;
 }
 
 .energy-city-chart-wrap {
   width: 100%;
   height: clamp(320px, 60vh, 460px);
-  border: 1px solid var(--border-map);
-  border-radius: 12px;
-  padding: 8px 8px 2px;
-  background: #fcfefd;
+  padding: 4px 0 0;
 }
 
 .energy-homes-chart-wrap {
   width: 100%;
   height: 320px;
-  border: 1px solid var(--border-map);
-  border-radius: 12px;
-  padding: 8px 8px 2px;
-  background: #fcfefd;
+  padding: 4px 0 0;
 }
 
 .energy-homes-help {
@@ -217,11 +212,10 @@
 }
 
 .energy-home-summary {
-  margin-top: 12px;
-  border: 1px solid var(--border-soft);
-  border-radius: 10px;
-  background: #fff;
-  padding: 10px 12px;
+  margin-top: 14px;
+  border-radius: var(--radius-md);
+  background: var(--tint);
+  padding: 10px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -234,8 +228,11 @@
 }
 
 .energy-home-summary strong {
-  color: var(--primary);
-  font-size: 1.05rem;
+  font-family: var(--font-cond);
+  color: var(--ink);
+  font-size: 1.35rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .energy-map-card {
@@ -269,18 +266,20 @@
 }
 
 .energy-city-info {
-  border: 1px solid var(--border-map);
   border-radius: var(--radius-md);
-  background: var(--bg-soft);
-  padding: 14px;
+  background: var(--tint);
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .energy-city-info h4 {
   margin: 0;
-  color: var(--text-main);
+  font-size: 0.88rem;
+  font-family: var(--font);
+  font-weight: 500;
+  color: var(--ink-2);
 }
 
 .energy-city-info p {
@@ -295,20 +294,25 @@
 
 .energy-city-name {
   margin: 0;
-  color: var(--primary);
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-family: var(--font-cond);
+  color: var(--ink);
+  font-size: 1.25rem;
+  font-weight: 600;
 }
 
 .energy-city-stat {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
   gap: 10px;
   flex-wrap: wrap;
-  border: 1px solid var(--border-soft);
-  border-radius: 10px;
-  background: #fff;
-  padding: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+
+.energy-city-stat:last-child {
+  border-bottom: 0;
 }
 
 .energy-city-stat span {
@@ -381,5 +385,10 @@
 
 .energy-units-input {
   width: 64px;
-  padding: 4px 6px;
+  height: 30px;
+  padding: 0 6px;
+  border: 1px solid var(--field-line);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  font-variant-numeric: tabular-nums;
 }

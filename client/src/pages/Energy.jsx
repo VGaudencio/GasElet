@@ -24,8 +24,8 @@ import "../styles/Energy.css";
 const GENERATOR_TEMPLATES = [
   {
     id: "motor-gerador",
-    nome: "Motor Gerador",
-    tipo: "Motor de combustao interna",
+    nome: "Motor-gerador",
+    tipo: "Motor de combustão interna",
     eficienciaEletricaPct: 38,
     potenciaNominalKw: 1200,
     disponibilidadePct: 92,
@@ -34,7 +34,7 @@ const GENERATOR_TEMPLATES = [
   {
     id: "microturbina",
     nome: "Microturbina",
-    tipo: "Microturbina a gas",
+    tipo: "Microturbina a gás",
     eficienciaEletricaPct: 30,
     potenciaNominalKw: 500,
     disponibilidadePct: 90,
@@ -42,7 +42,7 @@ const GENERATOR_TEMPLATES = [
   },
   {
     id: "turbina-gas",
-    nome: "Turbina a Gas",
+    nome: "Turbina a gás",
     tipo: "Turbina industrial",
     eficienciaEletricaPct: 34,
     potenciaNominalKw: 2500,
@@ -51,8 +51,8 @@ const GENERATOR_TEMPLATES = [
   },
   {
     id: "peltier",
-    nome: "Celula de Peltier",
-    tipo: "Geracao termoeletrica",
+    nome: "Célula de Peltier",
+    tipo: "Geração termoelétrica",
     eficienciaEletricaPct: 6,
     potenciaNominalKw: 40,
     disponibilidadePct: 85,
@@ -63,7 +63,7 @@ const GENERATOR_TEMPLATES = [
 const IBGE_LOCALIDADES = "https://servicodados.ibge.gov.br/api/v1/localidades";
 const IBGE_MALHAS_V3 = "https://servicodados.ibge.gov.br/api/v3/malhas";
 const CALC_END_YEAR = DEFAULT_ANO_FINAL;
-const ENERGY_SERIES_COLORS = ["#1b5e20", "#2e7d32", "#43a047", "#66bb6a", "#81c784", "#a5d6a7"];
+const ENERGY_SERIES_COLORS = ["#1d4a37", "#2f6b4f", "#4e8a6a", "#7aa88e", "#a3c4b0", "#c7dccf"];
 const DEFAULT_RESIDENTIAL_CONSUMPTION_KWH_MONTH = 180;
 
 function toNumber(v, fallback = 0) {
@@ -332,9 +332,9 @@ function EnergyMap({ rows, selectedCityKey, onSelectCity }) {
   }, []);
 
   const styleFor = (idx, isActive) => {
-    const palette = ["#1b5e20", "#2e7d32", "#43a047", "#66bb6a", "#81c784", "#a5d6a7"];
+    const palette = ["#1d4a37", "#2f6b4f", "#4e8a6a", "#7aa88e", "#a3c4b0", "#c7dccf"];
     if (isActive) {
-      return { color: "#ef6c00", fillColor: "#ffb74d", weight: 3.2, fillOpacity: 0.5 };
+      return { color: "#d9661a", fillColor: "#f0b27a", weight: 3.2, fillOpacity: 0.5 };
     }
     const color = palette[idx % palette.length];
     return { color, fillColor: color, weight: 2.3, fillOpacity: 0.25 };
@@ -831,7 +831,7 @@ export default function Energy() {
         nome: activeGenerator?.nome
           ? `Casas (${activeGenerator.nome})`
           : "Casas alimentadas",
-        color: "#2e7d32",
+        color: "#2f6b4f",
       },
     ];
   }, [comparisonSeries, activeGenerator]);
@@ -929,7 +929,7 @@ export default function Energy() {
   if (loadingUser) {
     return (
       <div className={`home-container ${loaded ? "fade-in" : ""}`}>
-        <p>Carregando dados do usuario...</p>
+        <p>Carregando dados do usuário…</p>
       </div>
     );
   }
@@ -938,8 +938,8 @@ export default function Energy() {
     <div className={`home-container ${loaded ? "fade-in" : ""}`}>
       <header className="home-header">
         <div>
-          <h1>Energia Eletrica</h1>
-          <p>Estimativa de geracao eletrica a partir do metano do cenário selecionado.</p>
+          <h1>Energia elétrica</h1>
+          <p>Energia que o metano recuperado pode gerar, conforme o gerador escolhido.</p>
         </div>
 
         <div className="header-actions">
@@ -974,8 +974,8 @@ export default function Energy() {
 
       <section className="card glow energy-generator-card">
         <div className="energy-generator-header">
-          <h3>Tipos de Geradores</h3>
-          <p>Adicione presets ou cadastre um gerador personalizado com entradas comuns.</p>
+          <h3>Geradores</h3>
+          <p>Comece por um modelo pronto ou informe os dados de outro gerador.</p>
         </div>
 
         <div className="energy-template-row">
@@ -1013,7 +1013,7 @@ export default function Energy() {
           </div>
 
           <div className="field">
-            <label>Eficiencia eletrica (%)</label>
+            <label>Eficiência elétrica (%)</label>
             <input
               type="number"
               value={customDraft.eficienciaEletricaPct}
@@ -1024,7 +1024,7 @@ export default function Energy() {
           </div>
 
           <div className="field">
-            <label>Potencia nominal (kW)</label>
+            <label>Potência nominal (kW)</label>
             <input
               type="number"
               value={customDraft.potenciaNominalKw}
@@ -1053,7 +1053,7 @@ export default function Energy() {
           </div>
 
           <div className="field">
-            <label>Energia especifica do CH4 (kWh/t)</label>
+            <label>Energia específica do CH₄ (kWh/t)</label>
             <input
               type="number"
               value={customDraft.energiaEspecificaKwhPorTonCh4}
@@ -1069,7 +1069,7 @@ export default function Energy() {
 
         <div className="energy-generator-actions">
           <button className="btn-primary" type="button" onClick={handleAddCustomGenerator}>
-            Adicionar gerador personalizado
+            Adicionar gerador
           </button>
           <button
             className="btn-secondary"
@@ -1083,7 +1083,7 @@ export default function Energy() {
             type="button"
             onClick={() => setCompareGeneratorIds(activeGeneratorId ? [activeGeneratorId] : [])}
           >
-            Manter apenas ativo
+            Comparar só o ativo
           </button>
         </div>
 
@@ -1095,11 +1095,11 @@ export default function Energy() {
                 <th>Comparar</th>
                 <th>Nome</th>
                 <th>Tipo</th>
-                <th>Efic (%)</th>
+                <th>Efic. (%)</th>
                 <th>Pot. (kW)</th>
                 <th>Disp. (%)</th>
                 <th>Unidades</th>
-                <th>Acoes</th>
+                <th>Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -1159,7 +1159,7 @@ export default function Energy() {
 
       <section className="card glow energy-compare-card">
         <div className="energy-generator-header">
-          <h3>Comparativo de Geradores ({selectedYear || "-"})</h3>
+          <h3>Comparação de geradores</h3>
           <p>
             Curva anual de geração a partir do metano recuperado, limitada pela potência instalada
             (unidades × potência nominal) dos geradores selecionados.
@@ -1191,23 +1191,23 @@ export default function Energy() {
                       </linearGradient>
                     ))}
                   </defs>
-                  <CartesianGrid stroke="#dfe9e3" strokeDasharray="3 3" />
+                  <CartesianGrid stroke="#e3e7e3" strokeDasharray="3 3" />
                   <XAxis
                     dataKey="ano"
                     tickMargin={8}
                     interval={0}
                     ticks={comparisonTicks}
-                    tick={{ fill: "#1b3c2e", fontSize: isMobile ? 10 : 11 }}
-                    tickLine={{ stroke: "#dfe9e3" }}
-                    axisLine={{ stroke: "#dfe9e3" }}
+                    tick={{ fill: "#4a5650", fontSize: isMobile ? 10 : 11 }}
+                    tickLine={{ stroke: "#e3e7e3" }}
+                    axisLine={{ stroke: "#e3e7e3" }}
                   />
                   <YAxis
                     domain={[0, "auto"]}
                     width={isMobile ? 56 : 64}
                     tickFormatter={fmtAxis}
-                    tick={{ fill: "#1b3c2e", fontSize: isMobile ? 10 : 11 }}
-                    tickLine={{ stroke: "#dfe9e3" }}
-                    axisLine={{ stroke: "#dfe9e3" }}
+                    tick={{ fill: "#4a5650", fontSize: isMobile ? 10 : 11 }}
+                    tickLine={{ stroke: "#e3e7e3" }}
+                    axisLine={{ stroke: "#e3e7e3" }}
                   />
                   <Legend />
                   <ReTooltip
@@ -1218,10 +1218,10 @@ export default function Energy() {
                     labelFormatter={(label) => `Ano ${label}`}
                     contentStyle={{
                       background: "#fff",
-                      border: "1px solid #1b5e20",
-                      borderRadius: 8,
-                      color: "#1b5e20",
-                      fontWeight: 700,
+                      border: "1px solid #1d4a37",
+                      borderRadius: 4,
+                      color: "#1d4a37",
+                      fontWeight: 500,
                     }}
                   />
                   {comparisonSeries.map((series) => (
@@ -1284,8 +1284,8 @@ export default function Energy() {
 
       {!rows.length ? (
         <section className="card glow energy-empty">
-          <h3>Sem cidades no cenário selecionado</h3>
-          <p>Adicione cidades na página inicial para visualizar a geração de energia.</p>
+          <h3>Nenhum município neste cenário</h3>
+          <p>Adicione municípios na tela Início para estimar a energia.</p>
         </section>
       ) : (
         <>
@@ -1293,20 +1293,18 @@ export default function Energy() {
             <div className="exp-metric-card glow">
               <h3>Geradores cadastrados</h3>
               <div className="exp-mini-content">
-                <span className="material-icons exp-icon">precision_manufacturing</span>
                 <div className="exp-text">
                   <h2>{generators.length}</h2>
                 </div>
               </div>
             </div>
 
-            <div className="exp-metric-card glow">
-              <h3>Potencial total ({selectedYear})</h3>
+            <div className="exp-metric-card is-gas">
+              <h3>Energia potencial em {selectedYear}</h3>
               <div className="exp-mini-content">
-                <span className="material-icons exp-icon">bolt</span>
                 <div className="exp-text">
                   <h2>{fmtMwh(selectedYearTotals?.energiaPotencialMwh || 0)} MWh</h2>
-                  <p className="green-text">Gerada: {fmtMwh(selectedYearTotals?.energiaGeradaMwh || 0)} MWh</p>
+                  <p className="green-text">gerada: {fmtMwh(selectedYearTotals?.energiaGeradaMwh || 0)} MWh</p>
                 </div>
               </div>
             </div>
@@ -1314,7 +1312,6 @@ export default function Energy() {
             <div className="exp-metric-card glow">
               <h3>Gerador ativo</h3>
               <div className="exp-mini-content">
-                <span className="material-icons exp-icon">tune</span>
                 <div className="exp-text">
                   <p className="green-text">{activeGenerator?.nome || "Sem gerador"}</p>
                   <h2>
@@ -1328,27 +1325,27 @@ export default function Energy() {
           <main className="home-grid energy-grid">
             <section className="card glow energy-map-card energy-map-main-card">
               <div className="map-card-header">
-                <h3>Mapa Interativo de Energia por Cidade</h3>
+                <h3>Energia por município</h3>
               </div>
 
               <div className="energy-map-layout">
                 <EnergyMap rows={rows} selectedCityKey={selectedCityKey} onSelectCity={setSelectedCityKey} />
 
                 <aside className="energy-city-info">
-                  <h4>Cidade selecionada</h4>
+                  <h4>Município selecionado</h4>
                   {!selectedCity ? (
-                    <p>Clique em uma cidade no mapa para ver os indicadores.</p>
+                    <p>Clique num município no mapa.</p>
                   ) : (
                     <div className="energy-city-info-content">
                       <p className="energy-city-name">
                         {selectedCity.nome} ({selectedCity.uf})
                       </p>
                       <div className="energy-city-stat">
-                        <span>Populacao ({selectedYear})</span>
+                        <span>População ({selectedYear})</span>
                         <strong>{fmtInt(selectedCity.populacao)}</strong>
                       </div>
                       <div className="energy-city-stat">
-                        <span>Producao de metano</span>
+                        <span>Metano gerado</span>
                         <strong>{fmtTon(selectedCity.metanoTAno)} t/ano</strong>
                       </div>
                       <div className="energy-city-stat">
@@ -1370,7 +1367,7 @@ export default function Energy() {
             </section>
 
             <section className="card glow energy-city-card">
-              <h3>Potencial por Cidade ({selectedYear})</h3>
+              <h3>Potencial por município em {selectedYear}</h3>
               <div className="energy-city-chart-wrap">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
@@ -1383,13 +1380,13 @@ export default function Energy() {
                     }
                     barCategoryGap={8}
                   >
-                    <CartesianGrid stroke="#edf3ee" strokeDasharray="3 3" horizontal={false} />
+                    <CartesianGrid stroke="#e3e7e3" strokeDasharray="3 3" horizontal={false} />
                     <XAxis
                       type="number"
                       tickFormatter={fmtAxis}
-                      tick={{ fill: "#1b3c2e", fontSize: isMobile ? 10 : 11 }}
-                      tickLine={{ stroke: "#dfe9e3" }}
-                      axisLine={{ stroke: "#dfe9e3" }}
+                      tick={{ fill: "#4a5650", fontSize: isMobile ? 10 : 11 }}
+                      tickLine={{ stroke: "#e3e7e3" }}
+                      axisLine={{ stroke: "#e3e7e3" }}
                       domain={[0, "auto"]}
                     />
                     <YAxis
@@ -1398,19 +1395,19 @@ export default function Energy() {
                       width={cityAxisWidth}
                       interval={0}
                       tickFormatter={formatCityTick}
-                      tick={{ fill: "#1b3c2e", fontSize: isMobile ? 10 : 11 }}
-                      tickLine={{ stroke: "#dfe9e3" }}
-                      axisLine={{ stroke: "#dfe9e3" }}
+                      tick={{ fill: "#4a5650", fontSize: isMobile ? 10 : 11 }}
+                      tickLine={{ stroke: "#e3e7e3" }}
+                      axisLine={{ stroke: "#e3e7e3" }}
                     />
                     <ReTooltip
                       formatter={(value) => [`${fmtMwh(value)} MWh`, "Potencial"]}
-                      labelFormatter={(value) => `Cidade: ${value}`}
+                      labelFormatter={(value) => `Município: ${value}`}
                       contentStyle={{
                         background: "#fff",
-                        border: "1px solid #1b5e20",
-                        borderRadius: 8,
-                        color: "#1b5e20",
-                        fontWeight: 700,
+                        border: "1px solid #1d4a37",
+                        borderRadius: 4,
+                        color: "#1d4a37",
+                        fontWeight: 500,
                       }}
                     />
                     <Bar
@@ -1419,7 +1416,7 @@ export default function Energy() {
                       onClick={(entry) => setSelectedCityKey(entry?.payload?.key || null)}
                     >
                       {cityEnergyData.map((c) => (
-                        <Cell key={c.key} fill={c.key === selectedCityKey ? "#ef6c00" : "#2e7d32"} />
+                        <Cell key={c.key} fill={c.key === selectedCityKey ? "#d9661a" : "#2f6b4f"} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -1428,9 +1425,9 @@ export default function Energy() {
             </section>
 
             <section className="card glow energy-homes-input-card">
-              <h3>Consumo Residencial</h3>
+              <h3>Consumo residencial</h3>
               <p className="energy-homes-help">
-                Informe o consumo mensal médio de uma residência (kWh/mês).
+                Consumo médio de uma residência, usado para converter energia em casas atendidas.
               </p>
               <div className="field">
                 <label>Consumo da residência (kWh/mês)</label>
@@ -1448,15 +1445,15 @@ export default function Energy() {
               </div>
 
               <div className="energy-home-summary">
-                <span>Casas alimentadas em {selectedYear} (gerador ativo)</span>
+                <span>Residências atendidas em {selectedYear} (gerador ativo)</span>
                 <strong>{fmtInt(selectedYearHomes?.casasAtendidas || 0)}</strong>
               </div>
             </section>
 
             <section className="card glow energy-homes-chart-card">
-              <h3>Casas Alimentadas pelo Gerador (por ano)</h3>
+              <h3>Residências atendidas por ano</h3>
               <p className="energy-homes-help">
-                Estimativa baseada no potencial energético anual dos geradores selecionados no comparador.
+                Energia gerada por ano pelos geradores em comparação, dividida pelo consumo de uma residência.
               </p>
               <div className="energy-homes-chart-wrap">
                 <ResponsiveContainer width="100%" height="100%">
@@ -1476,22 +1473,22 @@ export default function Energy() {
                         </linearGradient>
                       ))}
                     </defs>
-                    <CartesianGrid stroke="#dfe9e3" strokeDasharray="3 3" />
+                    <CartesianGrid stroke="#e3e7e3" strokeDasharray="3 3" />
                     <XAxis
                       dataKey="ano"
                       tickMargin={8}
                       interval={0}
                       ticks={homesTicks}
-                      tick={{ fill: "#1b3c2e", fontSize: isMobile ? 10 : 11 }}
-                      tickLine={{ stroke: "#dfe9e3" }}
-                      axisLine={{ stroke: "#dfe9e3" }}
+                      tick={{ fill: "#4a5650", fontSize: isMobile ? 10 : 11 }}
+                      tickLine={{ stroke: "#e3e7e3" }}
+                      axisLine={{ stroke: "#e3e7e3" }}
                     />
                     <YAxis
                       tickFormatter={fmtAxis}
                       width={isMobile ? 56 : 64}
-                      tick={{ fill: "#1b3c2e", fontSize: isMobile ? 10 : 11 }}
-                      tickLine={{ stroke: "#dfe9e3" }}
-                      axisLine={{ stroke: "#dfe9e3" }}
+                      tick={{ fill: "#4a5650", fontSize: isMobile ? 10 : 11 }}
+                      tickLine={{ stroke: "#e3e7e3" }}
+                      axisLine={{ stroke: "#e3e7e3" }}
                       domain={[0, "auto"]}
                     />
                     <Legend />
@@ -1500,10 +1497,10 @@ export default function Energy() {
                       labelFormatter={(label) => `Ano ${label}`}
                       contentStyle={{
                         background: "#fff",
-                        border: "1px solid #1b5e20",
-                        borderRadius: 8,
-                        color: "#1b5e20",
-                        fontWeight: 700,
+                        border: "1px solid #1d4a37",
+                        borderRadius: 4,
+                        color: "#1d4a37",
+                        fontWeight: 500,
                       }}
                     />
                     {homesSeries.map((series) => (

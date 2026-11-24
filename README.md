@@ -63,8 +63,8 @@ O cálculo fica numa **API em C++ (Drogon)**, e a interface é uma **SPA React**
 </table>
 
 <p align="center">
-  <img src="docs/readme/screenshots/graficos.webp" alt="Gráficos de Metano: cidades no cenário, metano e resíduo totais em 2045 e curva anual de metano por cidade com a linha de encerramento do aterro" width="100%">
-  <br><sub><b>Gráficos de Metano</b>: metano gerado por ano, no total e por cidade, com a linha de encerramento do aterro. Cenário de exemplo usado em todas as capturas: 9 municípios em torno de Campina Grande (PB), aterro operando de 2012 a 2045.</sub>
+  <img src="docs/readme/screenshots/graficos.webp" alt="Tela Metano: municípios no cenário, metano e resíduo de 2045 e curva anual de metano por município com a linha de encerramento do aterro" width="100%">
+  <br><sub><b>Metano</b>: metano gerado por ano, no total e por município, com a linha de encerramento do aterro. Cenário de exemplo usado em todas as capturas: 9 municípios em torno de Campina Grande (PB), aterro operando de 2012 a 2045.</sub>
 </p>
 
 <details>
@@ -85,12 +85,12 @@ O cálculo fica numa **API em C++ (Drogon)**, e a interface é uma **SPA React**
     <td width="33%" valign="top">
       <img src="docs/readme/icons/populacao.svg" width="40" alt=""><br>
       <b>População municipal</b><br>
-      <sub>Séries anuais de 2000 a 2060 para 5.566 municípios. O cenário soma as cidades escolhidas e mostra o crescimento e a participação de cada uma.</sub>
+      <sub>Séries anuais de 2000 a 2060 para 5.566 municípios. O cenário soma os municípios escolhidos e mostra o crescimento e a participação de cada uma.</sub>
     </td>
     <td width="33%" valign="top">
       <img src="docs/readme/icons/mapa.svg" width="40" alt=""><br>
       <b>Mapa por município</b><br>
-      <sub>Contornos municipais do IBGE sobre o OpenStreetMap: marcadores no Início, metano e potencial elétrico por cidade nas telas de Gráficos e Energia.</sub>
+      <sub>Contornos municipais do IBGE sobre o OpenStreetMap: marcadores no Início, metano e potencial elétrico por município nas telas de Metano e Energia.</sub>
     </td>
   </tr>
   <tr>
@@ -118,8 +118,8 @@ O cálculo fica numa **API em C++ (Drogon)**, e a interface é uma **SPA React**
     </td>
     <td valign="top">
       <img src="docs/readme/icons/tendencia.svg" width="40" alt=""><br>
-      <b>Comparativo por cidade</b><br>
-      <sub>Curvas de metano do total e das cidades escolhidas, com a linha de encerramento do aterro e a projeção até 2060.</sub>
+      <b>Comparação por município</b><br>
+      <sub>Curvas de metano do total e dos municípios escolhidos, com a linha de encerramento do aterro e a projeção até 2060.</sub>
     </td>
     <td valign="top">
       <img src="docs/readme/icons/energia.svg" width="40" alt=""><br>
@@ -159,24 +159,24 @@ O cálculo fica numa **API em C++ (Drogon)**, e a interface é uma **SPA React**
 
 <table>
   <tr>
-    <td width="50%" valign="top"><img src="docs/readme/screenshots/inicio-cidades.webp" alt="Início: seleção de UF e município e tabela de população"><br><sub><b>Início</b>: escolha de UF e município e a população de cada cidade, ano a ano.</sub></td>
+    <td width="50%" valign="top"><img src="docs/readme/screenshots/inicio-cidades.webp" alt="Início: seleção de UF e município e tabela de população"><br><sub><b>Início</b>: escolha de UF e município e a população de cada município, ano a ano.</sub></td>
     <td width="50%" valign="top"><img src="docs/readme/screenshots/inicio.webp" alt="Início: mapa, indicadores e população total do cenário"><br><sub><b>Cenário no mapa</b>: os municípios, o crescimento populacional e a população total até 2060.</sub></td>
   </tr>
   <tr>
     <td valign="top"><img src="docs/readme/screenshots/residuos.webp" alt="Configuração de resíduos sólidos urbanos"><br><sub><b>Resíduos</b>: coleta, curva per capita (aqui, a da Paraíba), vida útil, zona climática, MCF, discretização e composição.</sub></td>
-    <td valign="top"><img src="docs/readme/screenshots/residuos-serie.webp" alt="Produção anual de RSU"><br><sub><b>Produção de RSU</b>: per capita, massa e população por ano de operação do aterro.</sub></td>
+    <td valign="top"><img src="docs/readme/screenshots/residuos-serie.webp" alt="Composição do resíduo e resíduo coletado por ano"><br><sub><b>Composição e coleta</b>: frações do resíduo, L0 resultante e a massa coletada a cada ano de operação do aterro.</sub></td>
   </tr>
   <tr>
     <td valign="top"><img src="docs/readme/screenshots/energia.webp" alt="Comparativo de geradores"><br><sub><b>Geradores</b>: energia anual limitada pela potência instalada, residências atendidas e uso da potência.</sub></td>
-    <td valign="top"><img src="docs/readme/screenshots/energia-mapa.webp" alt="Energia por cidade e residências atendidas"><br><sub><b>Energia por cidade</b>: potencial de cada município no mapa e no gráfico, e residências atendidas por ano.</sub></td>
+    <td valign="top"><img src="docs/readme/screenshots/energia-mapa.webp" alt="Energia por município e residências atendidas"><br><sub><b>Energia por município</b>: potencial de cada município no mapa e no gráfico, e residências atendidas por ano.</sub></td>
   </tr>
 </table>
 
 ### No celular
 
 <p align="center">
-  <img src="docs/readme/mobile.webp" alt="Início, Gráficos de Metano e Energia no celular" width="100%">
-  <br><sub>No celular, a navegação vai para uma barra inferior e os cartões passam a ocupar a largura toda.</sub>
+  <img src="docs/readme/mobile.webp" alt="Início, Metano e Energia no celular" width="100%">
+  <br><sub>No celular, a navegação vai para uma barra inferior com rótulos e os painéis ocupam a largura toda.</sub>
 </p>
 
 ## Modelo de cálculo
@@ -235,7 +235,7 @@ As curvas foram ajustadas à coleta per capita declarada no SNIS-RS (Co119 / Co1
 | **Própria** (curva da região reescalada para o nível do estado) | AM, BA, ES, GO, MG, MT, PA, PB, PR, RJ, RN, RS, SC, SE, SP |
 | **Da região** | AC, AL, AP, CE, DF, MA, MS, PE, PI, RO, RR, TO |
 
-Ajustando até 2016 e prevendo 2017–2021, a curva errou 8% em média, contra 15% das retas regionais do Panorama ABRELPE 2020 (manter constante o nível de 2012–2016 errou 5%). As retas continuam disponíveis como `metodoPerCapita = "abrelpe2020"`. Scripts, critérios e resultados estão em [`analise_sinis/`](analise_sinis/README.md).
+Ajustando até 2016 e prevendo 2017–2021, a curva errou 8% em média, contra 15% das retas regionais do Panorama ABRELPE 2020, usadas nas versões anteriores (manter constante o nível de 2012–2016 errou 5%). Scripts, critérios e resultados estão em [`analise_sinis/`](analise_sinis/README.md).
 </details>
 
 ## Arquitetura
@@ -296,7 +296,7 @@ flowchart TB
 |---|---|
 | **Cálculo no servidor** | O metano dos gráficos vem do C++ (`UserDashboard.cpp`). O cliente tem uma cópia do modelo (`landfillModel.js`, `rsuProduction.js`) só para a tela de Resíduos responder na hora; ao salvar, o servidor recalcula as séries. |
 | **Parâmetros gerados, não copiados** | Os parâmetros das curvas per capita ficam entre os marcadores `<gerado:snis-logistica>` no JavaScript e no C++ e são reescritos por `analise_sinis/scripts/gerar_codigo.py`. Cliente e servidor não divergem. |
-| **Métodos antigos preservados** | `metodoPerCapita = "abrelpe2020"` e `metodoFod = "legado"` reproduzem os resultados de versões anteriores, para comparar e refazer números já usados. |
+| **Discretização antiga preservada** | `metodoFod = "legado"` reproduz o metano das versões anteriores, para comparar e refazer números já usados. |
 | **Arquivos, não banco** | Cada usuário tem um JSON em `server/Dados/users/`, e a população fica em um JSON por UF. Os dados são fáceis de copiar, versionar e conferir. |
 | **Sessão em cookie HttpOnly** | JWT assinado (validade de ~12 h) em cookie `HttpOnly` com `SameSite=Lax`, ou no cabeçalho `Authorization: Bearer`. O cadastro (`/signup`) só é aceito a partir da própria máquina do servidor. |
 | **Salvamento automático** | O painel salva sozinho no servidor e guarda uma cópia no `localStorage`. No logout, as alterações pendentes são enviadas antes de sair. |
@@ -309,6 +309,7 @@ flowchart TB
 | **Interface** | React 19, React Router 7, Vite 7, Recharts 3, Nivo 0.99, Leaflet 1.9 + React Leaflet 5, Turf 7, react-icons |
 | **API** | C++17, Drogon, jwt-cpp, OpenSSL, libxcrypt (bcrypt), CMake 3.14+ |
 | **Análise de dados** | Python com pandas, numpy, scipy e statsmodels (`analise_sinis/`) |
+| **Identidade** | Barlow e Barlow Semi Condensed; verde da marca na navegação e nas ações, laranja da chama só para metano e energia (tokens em `client/src/styles/globals.css`) |
 | **CI** | GitHub Actions: build do frontend e do backend a cada push na `main` e em pull requests |
 
 ## Como rodar
@@ -382,7 +383,7 @@ Todas as rotas respondem JSON. As de painel, cálculo e dados exigem sessão (co
 |---|---|
 | Autenticação | `POST /signup` (só da máquina do servidor) · `POST /login` · `GET /me` · `POST /logout` |
 | Painel | `GET /api/user/dashboard` · `POST /api/user/dashboard` (mescla com o salvo e recalcula as séries) |
-| Cálculo | `POST /api/user/landfill/calc`: RSU, per capita e metano gerado e recuperado por ano, no total e por cidade |
+| Cálculo | `POST /api/user/landfill/calc`: RSU, per capita e metano gerado e recuperado por ano, no total e por município |
 | Dados | `GET /api/json/{name}`: população por UF e lista de municípios de `server/Dados` |
 | Tempo real | WebSocket `/ws` (`ping` e `chat`) e servidor TCP auxiliar na porta 2020 |
 
@@ -417,7 +418,7 @@ GasElet/
 | SNIS-RS, Ministério das Cidades | coleta per capita de resíduos (Co119 / Co164) de 2003 a 2021, base das curvas per capita |
 | [IPCC 2006, Vol. 5](https://www.ipcc-nggip.iges.or.jp/public/2006gl/vol5.html) | DOC por fração (Tab. 2.4), MCF (Tab. 3.1) e k por zona climática (Tab. 3.3) |
 | IPCC Good Practice Guidance 2000 | decaimento de primeira ordem normalizado (Eq. 5.1) |
-| ABRELPE, Panorama dos Resíduos Sólidos no Brasil 2020 | retas regionais de geração per capita (método legado) |
+| ABRELPE, Panorama dos Resíduos Sólidos no Brasil 2020 | comparação na validação das curvas per capita (`analise_sinis/`) |
 | [OpenStreetMap](https://www.openstreetmap.org/copyright) | mapa de fundo (© colaboradores do OpenStreetMap, ODbL) |
 
 Os dados pertencem às respectivas instituições e são usados com atribuição. As séries populacionais são estimativas e projeções, não contagens anuais.
@@ -428,7 +429,7 @@ Os dados pertencem às respectivas instituições e são usados com atribuição
   <tr>
     <td width="90" align="center"><img src="docs/readme/brasao-ufpb.png" width="64" alt="Brasão da UFPB"></td>
     <td>
-      Plataforma desenvolvida na <b>Universidade Federal da Paraíba (UFPB)</b>, no Programa de Doutorado em Desenvolvimento e Meio Ambiente (PRODEMA).<br>
+      Plataforma desenvolvida no <b>Laboratório de Microengenharia</b> do Centro de Energias Alternativas e Renováveis (CEAR) da <b>Universidade Federal da Paraíba (UFPB)</b>.<br>
       <sub>Brasão da UFPB: vetor de Teo Gab (Wikimedia Commons, CC BY-SA 4.0). Mapas: <a href="https://leafletjs.com">Leaflet</a> (BSD-2-Clause) e © colaboradores do OpenStreetMap (ODbL). Ícones da interface: <a href="https://react-icons.github.io/react-icons/">react-icons</a> / Font Awesome (CC BY 4.0).</sub>
     </td>
   </tr>

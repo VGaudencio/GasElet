@@ -1,7 +1,7 @@
 # Coleta per capita de RSU a partir do SNIS-RS (2003–2021)
 
-Origem das curvas de geração per capita da plataforma (`metodoPerCapita = "snis"`,
-`client/src/utils/rsuProduction.js` e `server/controllers/PerCapita.cpp`).
+Origem das curvas de geração per capita da plataforma (`client/src/utils/rsuProduction.js` e
+`server/controllers/PerCapita.cpp`).
 
 Dados de entrada: `../DADOS SINIS/` (diagnósticos e planilhas municipais do SNIS-RS).
 Variáveis: Co119 (RDO+RPU coletado, t/ano), Co164 (pop. atendida declarada; Co050+Co147 até 2010),

@@ -1,24 +1,76 @@
+/* Tokens visuais do GasElet.
+   Verde "manta": marca, navegação e ações. Laranja "chama" (o da chama do ícone): só para
+   grandezas de metano e energia. O resto é neutro, com contorno fino em vez de sombra. */
 :root {
-  --bg: #f5f5f5;
-  --fg: #f5f5f5;
-  --accent: #2f81f7;
+  --page: #edf0ed;
+  --panel: #ffffff;
+  --tint: #f4f6f4;
+  --ink: #1e2723;
+  --ink-2: #5b6660;
+  --ink-3: #87918b;
+  --line: #d5dbd6;
+  --line-soft: #e8ece8;
+  --field-line: #c4ccc6;
+
+  --manta: #1d4a37;
+  --manta-700: #163a2b;
+  --manta-50: #e7efe9;
+  --chama: #d9661a;
+  --danger: #b3261e;
+
+  --font: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --font-cond: "Barlow Semi Condensed", "Barlow", "Segoe UI", system-ui, sans-serif;
+
+  --rail: 64px;
+  --rail-open: 248px;
+  --radius: 8px;
+  --radius-sm: 4px;
+  --focus: 0 0 0 3px rgba(29, 74, 55, 0.28);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Segoe UI', sans-serif;
-  background: var(--bg);
-  color: var(--fg);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.45;
+  background: var(--page);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 a {
-  color: var(--accent);
+  color: var(--manta);
   text-decoration: none;
 }
 
-.container {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 2rem;
+:focus-visible {
+  outline: 2px solid var(--manta);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }

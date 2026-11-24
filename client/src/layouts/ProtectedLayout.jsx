@@ -2,6 +2,7 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 import { DashboardProvider } from "../context/DashboardContext.jsx";
 
 export default function ProtectedLayout() {
@@ -13,7 +14,10 @@ export default function ProtectedLayout() {
     return (
       <DashboardProvider>
         <Navbar />
-        <Outlet />
+        <div className="app-main">
+          <Outlet />
+          <Footer />
+        </div>
       </DashboardProvider>
     );
   }
@@ -28,7 +32,10 @@ export default function ProtectedLayout() {
   return (
     <DashboardProvider>
       <Navbar />
-      <Outlet />
+      <div className="app-main">
+        <Outlet />
+        <Footer />
+      </div>
     </DashboardProvider>
   );
 }

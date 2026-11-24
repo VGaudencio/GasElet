@@ -2,14 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import "../styles/Rsu.css";
 import { ResponsiveLine } from "@nivo/line";
 import { useDashboard } from "../context/DashboardContext.jsx";
-import {
-  DEFAULT_PER_CAPITA_METHOD,
-  PER_CAPITA_METHODS,
-  calcRsuTonAno,
-  getPerCapKgAnoHab,
-  resolvePerCapitaMethod,
-  snisCurveFor,
-} from "../utils/rsuProduction.js";
+import { calcRsuTonAno, getPerCapKgAnoHab, snisCurveFor } from "../utils/rsuProduction.js";
 import { fmtAxis, fmtNumber, yearTicks } from "../utils/chartFormat.js";
 import {
   DEFAULT_ANO_FINAL,
@@ -55,7 +48,6 @@ function makeDefaultDraft() {
     // Captação RSU
     taxaColetaPct: null,
     regiao: "Nordeste",
-    metodoPerCapita: DEFAULT_PER_CAPITA_METHOD,
     geracaoKgAnoHab: null,
     vidaInicio: DEFAULT_ANO_INICIAL,
     vidaFim: DEFAULT_ANO_FINAL,
@@ -78,9 +70,12 @@ function makeDefaultDraft() {
 function normalizeConfig(config) {
   const base = makeDefaultDraft();
   if (!config || typeof config !== "object") return base;
+  // metodoPerCapita: campo de versões com a opção ABRELPE 2020, que foi removida.
+  // eslint-disable-next-line no-unused-vars
+  const { metodoPerCapita, ...rest } = config;
   return {
     ...base,
-    ...config,
+    ...rest,
     composicao: {
       ...base.composicao,
       ...(config.composicao || {}),
@@ -93,7 +88,6 @@ function isDefaultConfig(config) {
   const base = makeDefaultDraft();
   return (
     String(config.regiao) === base.regiao &&
-    resolvePerCapitaMethod(config.metodoPerCapita) === base.metodoPerCapita &&
     Number(config.geracaoKgAnoHab) === base.geracaoKgAnoHab &&
     Number(config.taxaColetaPct) === base.taxaColetaPct &&
     Number(config.vidaInicio) === base.vidaInicio &&
@@ -409,7 +403,6 @@ export default function Rsu() {
     const years = rangeYears(model.vidaInicio, model.vidaFim);
     const growth = model.popCrescimentoAnualPct / 100;
     const base = {
-      metodo: resolvePerCapitaMethod(model.metodoPerCapita),
       regiao: model.regiao,
       coletaPct: model.taxaColetaPct,
       fallbackKgAnoHab: model.geracaoKgAnoHab,
@@ -443,7 +436,7 @@ export default function Rsu() {
 
     const nivo = [
       {
-        id: "Produção de RSU (T/ano)",
+        id: "Resíduo coletado (t/ano)",
         data: rows.map((r) => ({ x: String(r.ano), y: Number(r.rsuTAno.toFixed(1)) })),
       },
     ];
@@ -453,9 +446,8 @@ export default function Rsu() {
     return { rows, nivo, ticks };
   }, [model, scenarioRows]);
 
-  // Curva per capita aplicada a cada UF do cenário (só no método SNIS).
+  // Curva per capita aplicada a cada UF do cenário.
   const perCapitaBases = useMemo(() => {
-    if (resolvePerCapitaMethod(draft.metodoPerCapita) !== "snis") return [];
     const ufs = [...new Set(scenarioRows.map((r) => String(r.uf || "").toUpperCase()).filter(Boolean))].sort();
     return ufs.map((uf) => {
       const curve = snisCurveFor(uf, draft.regiao);
@@ -466,7 +458,7 @@ export default function Rsu() {
         texto: `curva da região ${curve.regiao}${curve.motivo ? ` (${curve.motivo})` : ""}`,
       };
     });
-  }, [draft.metodoPerCapita, draft.regiao, scenarioRows]);
+  }, [draft.regiao, scenarioRows]);
 
   useEffect(() => {
     if (!currentScenarioId) return;
@@ -506,24 +498,20 @@ export default function Rsu() {
     <div className={`home-container ${loaded ? "fade-in" : ""}`}>
      <header className="home-header">
         <div>
-          <h1>Resíduos Sólidos Urbanos (RSU)</h1>
-          <p>Configure captação e produção para projetar os indicadores anuais do cenário.</p>
+          <h1>Resíduos sólidos urbanos</h1>
+          <p>Parâmetros de coleta, do aterro e da composição do resíduo. As mudanças valem depois de clicar em Recalcular.</p>
         </div>
       </header>
 
       <main className="home-grid rsu-grid">
         {/* Card combinado: Captação + Produção */}
         <section className="card glow rsu-config-card">
-          <div className="rsu-config-header">
-            <h3 className="rsu-section-title">Captação de RSU</h3>
-            <h3 className="rsu-section-title">Característica de Produção</h3>
-          </div>
-
           <div className="rsu-config-grid">
             <div className="rsu-config-col">
+              <h3 className="rsu-section-title">Coleta</h3>
               <div className="rsu-form">
                 <div className="field">
-                  <label>Taxa de Coleta (%)</label>
+                  <label>Taxa de coleta (%)</label>
                   <input
                     type="number"
                     value={draft.taxaColetaPct}
@@ -533,34 +521,18 @@ export default function Rsu() {
 
                 <div className="field">
                   <label>Geração per capita</label>
-                  <select
-                    value={resolvePerCapitaMethod(draft.metodoPerCapita)}
-                    title={
-                      PER_CAPITA_METHODS.find(
-                        (m) => m.value === resolvePerCapitaMethod(draft.metodoPerCapita)
-                      )?.descricao
-                    }
-                    onChange={(e) => setDraft((d) => ({ ...d, metodoPerCapita: e.target.value }))}
-                  >
-                    {PER_CAPITA_METHODS.map((m) => (
-                      <option key={m.value} value={m.value} title={m.descricao}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="field-static" title="Coleta per capita do SNIS 2003–2021, curva logística integrada por Runge-Kutta 4">
+                    Curva do SNIS por UF
+                  </div>
                   {perCapitaBases.length > 0 && (
                     <small className="field-hint">
-                      {perCapitaBases.map((b) => `${b.uf}: ${b.texto}`).join(" · ")}
+                      {perCapitaBases.map((b) => `${b.uf}: ${b.texto}`).join("; ")}
                     </small>
                   )}
                 </div>
 
                 <div className="field">
-                  <label>
-                    {resolvePerCapitaMethod(draft.metodoPerCapita) === "snis"
-                      ? "Região (sem município no cenário)"
-                      : "Região (geração RSU padrão)"}
-                  </label>
+                  <label>Região (cenário sem municípios)</label>
                   <select value={draft.regiao} onChange={(e) => setDraft((d) => ({ ...d, regiao: e.target.value }))}>
                     {REGIOES.map((r) => (
                       <option key={r.id} value={r.id}>
@@ -571,7 +543,7 @@ export default function Rsu() {
                 </div>
 
                 <div className="field">
-                  <label>Tempo de Vida Útil do aterro</label>
+                  <label>Operação do aterro (início e fim)</label>
                   <div className="field-inline">
                     <select
                       value={draft.vidaInicio}
@@ -597,9 +569,10 @@ export default function Rsu() {
             </div>
 
             <div className="rsu-config-col">
+              <h3 className="rsu-section-title">Aterro e biogás</h3>
               <div className="rsu-form two-cols">
                 <div className="field">
-                  <label>Captação de Biogás (%)</label>
+                  <label>Captação de biogás (%)</label>
                   <input
                     type="number"
                     value={draft.captacaoBiogasPct}
@@ -638,7 +611,7 @@ export default function Rsu() {
                 </div>
 
                 <div className="field">
-                  <label>Gerenciamento do Aterro</label>
+                  <label>Tipo de aterro (MCF)</label>
                   <select
                     value={draft.gerenciamento}
                     onChange={(e) => setDraft((d) => ({ ...d, gerenciamento: e.target.value }))}
@@ -670,7 +643,7 @@ export default function Rsu() {
                 </div>
 
                 <div className="field">
-                  <label>População base (hab)</label>
+                  <label>População base (hab.)</label>
                   <input type="number" value={draft.popBase} onChange={(e) => setDraft((d) => ({ ...d, popBase: e.target.value }))} />
                 </div>
 
@@ -690,7 +663,7 @@ export default function Rsu() {
 
         {/* Tabela (direita, 2 linhas) */}
         <section className="card glow rsu-tableCard">
-          <h3 className="rsu-section-title">Produção de RSU (Ano/T/Hab.)</h3>
+          <h3 className="rsu-section-title">Resíduo coletado por ano</h3>
 
           <div className="table-wrap" role="region" aria-label="Tabela de produção de RSU">
             <table className="rsu-table">
@@ -718,11 +691,11 @@ export default function Rsu() {
 
         {/* Composição */}
         <section className="card glow rsu-comp">
-          <h3 className="rsu-section-title">Características do RSU</h3>
+          <h3 className="rsu-section-title">Composição do resíduo (%)</h3>
 
           <div className="rsu-comp-grid">
             <div className="field">
-              <label>Papel e Papelão (%)</label>
+              <label>Papel e papelão</label>
               <input
                 type="number"
                 step="0.1"
@@ -732,7 +705,7 @@ export default function Rsu() {
             </div>
 
             <div className="field">
-              <label>Plástico (%)</label>
+              <label>Plástico</label>
               <input
                 type="number"
                 step="0.1"
@@ -744,7 +717,7 @@ export default function Rsu() {
             </div>
 
             <div className="field">
-              <label>Madeira (%)</label>
+              <label>Madeira</label>
               <input
                 type="number"
                 step="0.1"
@@ -754,7 +727,7 @@ export default function Rsu() {
             </div>
 
             <div className="field">
-              <label>Vidro (%)</label>
+              <label>Vidro</label>
               <input
                 type="number"
                 step="0.1"
@@ -764,7 +737,7 @@ export default function Rsu() {
             </div>
 
             <div className="field">
-              <label>Outros (%)</label>
+              <label>Outros</label>
               <input
                 type="number"
                 step="0.1"
@@ -774,7 +747,7 @@ export default function Rsu() {
             </div>
 
             <div className="field">
-              <label>Matéria Orgânica (%)</label>
+              <label>Matéria orgânica</label>
               <input
                 type="number"
                 step="0.1"
@@ -786,7 +759,7 @@ export default function Rsu() {
             </div>
 
             <div className="field">
-              <label>Têxteis (%)</label>
+              <label>Têxteis</label>
               <input
                 type="number"
                 step="0.1"
@@ -798,7 +771,7 @@ export default function Rsu() {
             </div>
 
             <div className="field">
-              <label>Metal (%)</label>
+              <label>Metal</label>
               <input
                 type="number"
                 step="0.1"
@@ -808,7 +781,7 @@ export default function Rsu() {
             </div>
 
             <div className="field">
-              <label>Borracha/couro (%)</label>
+              <label>Borracha e couro</label>
               <input
                 type="number"
                 step="0.1"
@@ -820,28 +793,26 @@ export default function Rsu() {
             </div>
 
             <div className="rsu-comp-actions">
-              <button className="btn-primary glow" type="button" onClick={onAtualizar}>
-                ATUALIZAR
+              <button className="btn-primary" type="button" onClick={onAtualizar}>
+                Recalcular
               </button>
 
               <button className="btn-secondary" type="button" onClick={normalizarComposicao}>
-                Normalizar p/ 100%
+                Ajustar soma para 100%
               </button>
 
               <div className={`rsu-sum ${compOk ? "ok" : "warn"}`}>
-                Soma: <b>{fmt1(somaComposicao)}</b>%{" "}
-                {compOk ? (
-                  <span className="green-text">(OK)</span>
-                ) : (
+                Soma: <b>{fmt1(somaComposicao)}%</b>
+                {compOk ? null : (
                   <span className="orange-text">
-                    ({deltaComposicao > 0 ? `falta ${fmt1(deltaComposicao)}` : `sobra ${fmt1(Math.abs(deltaComposicao))}`} %)
+                    {deltaComposicao > 0 ? `faltam ${fmt1(deltaComposicao)}%` : `sobram ${fmt1(Math.abs(deltaComposicao))}%`}
                   </span>
                 )}
               </div>
 
               <div className="rsu-sum ok">
-                Lo calculado: <b>{fmt4(loCalculado)}</b>
-                <span className="rsu-lo-unit">t CH4/t RSU ({fmt1(loCalculado / 0.0007168)} m³/t)</span>
+                L0: <b>{fmt4(loCalculado)}</b>
+                <span className="rsu-lo-unit">t CH₄/t ({fmt1(loCalculado / 0.0007168)} m³/t)</span>
               </div>
             </div>
           </div>
@@ -849,7 +820,7 @@ export default function Rsu() {
 
         {/* Gráfico full width */}
         <section className="card glow rsu-chart full-width">
-          <h3 className="rsu-section-title">Produção de RSU (t/ano)</h3>
+          <h3 className="rsu-section-title">Resíduo coletado (t/ano)</h3>
 
           {/* container específico para evitar conflitos com .chart-container global */}
           <div className="rsu-chart-container">
@@ -888,27 +859,27 @@ export default function Rsu() {
               gridYValues={isMobile ? 4 : 6}
               enablePoints={series.rows.length <= 25 && !isMobile}
               pointSize={5}
-              pointColor="#1b5e20"
+              pointColor="#1d4a37"
               pointBorderWidth={2}
               pointBorderColor="#fff"
               enableArea={true}
-              areaOpacity={isMobile ? 0.18 : 0.25}
+              areaOpacity={0.12}
               useMesh={true}
-              colors={["#1b5e20"]}
+              colors={["#1d4a37"]}
               theme={{
-                textColor: "#1b3c2e",
+                text: { fontFamily: "Barlow, 'Segoe UI', sans-serif", fill: "#4a5650" },
+                textColor: "#4a5650",
                 fontSize: isMobile ? 11 : 12,
-                grid: { line: { stroke: "#e0e0e0", strokeWidth: 1 } },
+                grid: { line: { stroke: "#e3e7e3", strokeWidth: 1 } },
               }}
               tooltip={({ point }) => (
                 <div
                   style={{
                     background: "white",
                     padding: "8px 10px",
-                    border: "1px solid #1b5e20",
-                    borderRadius: "8px",
-                    color: "#1b5e20",
-                    fontWeight: 700,
+                    border: "1px solid #d5dbd6",
+                    borderRadius: "4px",
+                    color: "#1e2723",
                   }}
                 >
                   {point.data.xFormatted}: {fmtNumber(point.data.y)} t/ano

@@ -252,11 +252,11 @@ function MethaneMap({ rows, selectedCityKey, onSelectCity }) {
   );
 
   const styleFor = (idx, isActive) => {
-    const palette = ["#1b5e20", "#2e7d32", "#43a047", "#66bb6a", "#81c784", "#a5d6a7"];
+    const palette = ["#1d4a37", "#2f6b4f", "#4e8a6a", "#7aa88e", "#a3c4b0", "#c7dccf"];
     if (isActive) {
       return {
-        color: "#ef6c00",
-        fillColor: "#ffb74d",
+        color: "#d9661a",
+        fillColor: "#f0b27a",
         weight: 3.2,
         fillOpacity: 0.5,
       };
@@ -541,7 +541,7 @@ export default function Charts() {
   );
 
   const cityComparisonSeries = useMemo(() => {
-    const palette = ["#ef6c00", "#00897b", "#5e35b1", "#039be5", "#f4511e", "#3949ab", "#43a047", "#8e24aa"];
+    const palette = ["#d9661a", "#2b7a8c", "#8a6a2e", "#5b5f97", "#b0413e", "#3e7cb1", "#4e8a6a", "#8c5a8a"];
     return comparedCities.map((city, idx) => ({
       key: city.key,
       nome: city.nome,
@@ -639,8 +639,8 @@ export default function Charts() {
     <div className={`home-container ${loaded ? "fade-in" : ""}`}>
       <header className="home-header">
         <div>
-          <h1>Gráficos de Metano</h1>
-          <p>Produção total, produção por cidade e detalhamento geográfico por município.</p>
+          <h1>Metano</h1>
+          <p>Metano gerado pelo resíduo depositado no aterro, no total e por município.</p>
         </div>
 
         <div className="header-actions">
@@ -663,7 +663,7 @@ export default function Charts() {
       </header>
 
       <div className="charts-period-chip">
-        Operação do aterro: {config.vidaInicio}–{config.vidaFim} | Projeção de metano até {CALC_END_YEAR}
+        Aterro recebendo resíduo de {config.vidaInicio} a {config.vidaFim}; metano calculado até {CALC_END_YEAR}.
       </div>
 
       {loadingLandfillCalc && (
@@ -679,26 +679,24 @@ export default function Charts() {
 
       {!rows.length ? (
         <section className="card glow charts-empty">
-          <h3>Sem cidades no cenário selecionado</h3>
-          <p>Adicione cidades na página inicial para visualizar os gráficos e o mapa de metano.</p>
+          <h3>Nenhum município neste cenário</h3>
+          <p>Adicione municípios na tela Início para calcular o metano.</p>
         </section>
       ) : (
         <>
           <div className="exp-metrics-row charts-metrics-row">
             <div className="exp-metric-card glow">
-              <h3>Cidades no cenário</h3>
+              <h3>Municípios</h3>
               <div className="exp-mini-content">
-                <span className="material-icons exp-icon">location_city</span>
                 <div className="exp-text">
                   <h2>{rows.length}</h2>
                 </div>
               </div>
             </div>
 
-            <div className="exp-metric-card glow">
-              <h3>Metano Total ({selectedYear})</h3>
+            <div className="exp-metric-card is-gas">
+              <h3>Metano gerado em {selectedYear}</h3>
               <div className="exp-mini-content">
-                <span className="material-icons exp-icon">bubble_chart</span>
                 <div className="exp-text">
                   <h2>{fmtTon(selectedYearTotals?.metanoTAno || 0)} t</h2>
                 </div>
@@ -706,9 +704,8 @@ export default function Charts() {
             </div>
 
             <div className="exp-metric-card glow">
-              <h3>Resíduo Total ({selectedYear})</h3>
+              <h3>Resíduo depositado em {selectedYear}</h3>
               <div className="exp-mini-content">
-                <span className="material-icons exp-icon">delete_outline</span>
                 <div className="exp-text">
                   <h2>{fmtTon(selectedYearTotals?.residuoTAno || 0)} t</h2>
                 </div>
@@ -718,8 +715,8 @@ export default function Charts() {
 
           <section className="card glow charts-compare-card">
             <div className="charts-compare-header">
-              <h3>Cidades no comparativo do gráfico</h3>
-              <p>Adicione ou remova cidades para comparar apenas as que você quiser.</p>
+              <h3>Municípios no gráfico</h3>
+              <p>Escolha quais municípios aparecem ao lado do total.</p>
             </div>
 
             <div className="charts-compare-controls">
@@ -767,7 +764,7 @@ export default function Charts() {
                       type="button"
                       className="charts-compare-tag-remove"
                       onClick={() => handleRemoveCompareCity(city.key)}
-                      title="Remover do comparativo"
+                      title="Tirar do gráfico"
                     >
                       ×
                     </button>
@@ -779,30 +776,30 @@ export default function Charts() {
 
           <main className="home-grid charts-grid">
             <section className="card glow charts-total-card">
-              <h3>Produção Total de Metano e Comparação por Cidade (t/ano)</h3>
+              <h3>Metano gerado por ano (t CH₄)</h3>
               <div className="charts-total-chart-wrap">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={cityComparisonAreaData} margin={{ top: 12, right: 20, bottom: 12, left: 4 }}>
                     <defs>
                       <linearGradient id="methaneArea" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#2e7d32" stopOpacity={0.35} />
-                        <stop offset="100%" stopColor="#2e7d32" stopOpacity={0.06} />
+                        <stop offset="0%" stopColor="#2f6b4f" stopOpacity={0.35} />
+                        <stop offset="100%" stopColor="#2f6b4f" stopOpacity={0.06} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid stroke="#dfe9e3" strokeDasharray="3 3" />
+                    <CartesianGrid stroke="#e3e7e3" strokeDasharray="3 3" />
                     <XAxis dataKey="ano" tickMargin={8} ticks={methaneTicks} interval={0} />
                     <YAxis
                       tickFormatter={fmtAxis}
                       width={64}
-                      label={{ value: "t CH₄/ano", angle: -90, position: "insideLeft", fill: "#1b3c2e", fontWeight: 700 }}
+                      label={{ value: "t CH₄/ano", angle: -90, position: "insideLeft", fill: "#4a5650", fontWeight: 500 }}
                     />
                     <Legend />
                     {config.vidaFim < (years[years.length - 1] ?? 0) && (
                       <ReferenceLine
                         x={config.vidaFim}
-                        stroke="#ef6c00"
+                        stroke="#d9661a"
                         strokeDasharray="4 4"
-                        label={{ value: `Encerramento (${config.vidaFim})`, position: "insideTopRight", fill: "#ef6c00", fontSize: 11 }}
+                        label={{ value: `Encerramento (${config.vidaFim})`, position: "insideTopRight", fill: "#d9661a", fontSize: 11 }}
                       />
                     )}
                     <Tooltip
@@ -813,17 +810,17 @@ export default function Charts() {
                       labelFormatter={(label) => `Ano ${label}`}
                       contentStyle={{
                         background: "#fff",
-                        border: "1px solid #1b5e20",
-                        borderRadius: 8,
-                        color: "#1b5e20",
-                        fontWeight: 700,
+                        border: "1px solid #1d4a37",
+                        borderRadius: 4,
+                        color: "#1d4a37",
+                        fontWeight: 500,
                       }}
                     />
                     <Area
                       type="monotone"
                       dataKey="total"
                       name="Total"
-                      stroke="#1b5e20"
+                      stroke="#1d4a37"
                       strokeWidth={2.4}
                       fill="url(#methaneArea)"
                       fillOpacity={1}
@@ -850,7 +847,7 @@ export default function Charts() {
 
           <section className="card glow charts-map-card">
             <div className="map-card-header">
-              <h3>Mapa Interativo de Produção por Cidade</h3>
+              <h3>Metano por município</h3>
             </div>
 
             <div className="charts-map-layout">
@@ -861,9 +858,9 @@ export default function Charts() {
               />
 
               <aside className="charts-city-info">
-                <h4>Cidade selecionada</h4>
+                <h4>Município selecionado</h4>
                 {!selectedCity ? (
-                  <p>Clique em uma cidade no mapa para ver os indicadores.</p>
+                  <p>Clique num município no mapa.</p>
                 ) : (
                   <div className="charts-city-info-content">
                     <p className="charts-city-name">

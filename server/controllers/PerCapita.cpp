@@ -9,22 +9,6 @@
 namespace percapita {
 namespace {
 
-    struct Reta {
-        double a;
-        double b;
-    };
-
-    // Legado: reta por dois pontos (2010 e 2019) do Gráfico 2 do Panorama ABRELPE 2020.
-    // Coeficientes mantidos como estavam, inclusive os do Nordeste truncados (2,44 em vez
-    // de 22/9), para reproduzir os resultados antigos.
-    const std::unordered_map<std::string, Reta> kAbrelpe2020 = {
-        {"Norte", {-7753.0, 4.0}},
-        {"Nordeste", {-4588.33, 2.44}},
-        {"Centro-Oeste", {1258.333, -0.444}},
-        {"Sudeste", {-10093.667, 5.222}},
-        {"Sul", {-3985.333, 2.111}},
-    };
-
     // dg/dt = r·g·(1 − g/K), g(kT0) = G0 (kg/hab. atendido/ano).
     struct Logistica {
         double G0;
@@ -127,35 +111,17 @@ namespace {
 
 }  // namespace
 
-Metodo metodoFromString(const std::string& value)
-{
-    if (value == "abrelpe2020") return Metodo::Abrelpe2020;
-    return Metodo::Snis;
-}
-
-const char* metodoName(Metodo metodo)
-{
-    return metodo == Metodo::Abrelpe2020 ? "abrelpe2020" : "snis";
-}
-
 std::string regiaoDaUf(const std::string& uf)
 {
     const auto it = kUfRegiao.find(normalizarUf(uf));
     return it != kUfRegiao.end() ? it->second : std::string();
 }
 
-double kgAnoHab(Metodo metodo,
-                const std::string& uf,
+double kgAnoHab(const std::string& uf,
                 const std::string& regiao,
                 int ano,
                 double fallbackKgAnoHab)
 {
-    if (metodo == Metodo::Abrelpe2020) {
-        const auto it = kAbrelpe2020.find(regiao);
-        if (it == kAbrelpe2020.end()) return fallbackKgAnoHab;
-        return it->second.a + it->second.b * static_cast<double>(ano);
-    }
-
     const std::string sigla = normalizarUf(uf);
     const auto itUf = kSnisUfs.find(sigla);
     if (itUf != kSnisUfs.end()) return snisCached(sigla, itUf->second, ano);

@@ -1,6 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { FaHome, FaUser, FaTrash, FaChartPie, FaBolt, FaSignOutAlt } from "react-icons/fa";
+import {
+  FaBolt,
+  FaFire,
+  FaHome,
+  FaLayerGroup,
+  FaPen,
+  FaPlus,
+  FaSignOutAlt,
+  FaTrash,
+  FaTrashAlt,
+  FaUser,
+} from "react-icons/fa";
 import { useDashboard } from "../context/DashboardContext.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 import "../styles/Navbar.css";
@@ -44,7 +55,7 @@ export default function Navbar() {
   const items = [
     { id: "home", icon: <FaHome />, label: "Início", path: "/" },
     { id: "trash", icon: <FaTrash />, label: "Resíduos", path: "/rsu" },
-    { id: "chart", icon: <FaChartPie />, label: "Gráficos", path: "/charts" },
+    { id: "chart", icon: <FaFire />, label: "Metano", path: "/charts" },
     { id: "energy", icon: <FaBolt />, label: "Energia", path: "/energy" },
   ];
   const hasScenarios = Array.isArray(scenarios) && scenarios.length > 0;
@@ -130,7 +141,7 @@ export default function Navbar() {
       const didSave = await flushPendingChanges({ silent: true });
       if (!didSave) {
         const shouldExit = window.confirm(
-          "Nao foi possivel salvar as alteracoes agora. Deseja sair mesmo assim?"
+          "Não foi possível salvar as alterações agora. Deseja sair mesmo assim?"
         );
         if (!shouldExit) return;
       }
@@ -146,13 +157,22 @@ export default function Navbar() {
 
   return (
     <div className={`nav-container ${isVisible ? "nav-visible" : ""}`}>
-      <nav className="navbar">
+      <nav className="navbar" aria-label="Navegação principal">
+        <div className="nav-brand">
+          <span className="nav-icon">
+            <img src="/gaselet.svg" alt="" className="nav-brand-mark" />
+          </span>
+          <span className="nav-label nav-brand-name">GasElet</span>
+        </div>
+
         <div className="nav-top">
           <div className="nav-icons">
             {items.map((item) => (
               <NavLink
                 key={item.id}
                 to={item.path}
+                end
+                title={item.label}
                 className={({ isActive }) => `nav-btn ${isActive ? "active" : ""}`}
               >
                 <span className="nav-icon">{item.icon}</span>
@@ -163,13 +183,56 @@ export default function Navbar() {
         </div>
 
         <div className="nav-bottom">
-          <div className="nav-scenario-stack">
-            <label htmlFor="nav-scenario" className="nav-panel-label">Cenário</label>
-            <div className="nav-scenario-row">
+          <div className="nav-scenario" title={currentScenario ? `Cenário: ${currentScenario.name}` : "Cenário"}>
+            <span className="nav-icon" aria-hidden="true">
+              <FaLayerGroup />
+            </span>
+            <div className="nav-scenario-body">
+              <div className="nav-scenario-head">
+                <label htmlFor="nav-scenario" className="nav-panel-label">Cenário</label>
+                <div className="nav-scenario-actions">
+                  <button
+                    type="button"
+                    className="nav-scenario-btn"
+                    onClick={handleCreateScenario}
+                    title="Novo cenário"
+                    aria-label="Novo cenário"
+                  >
+                    <FaPlus />
+                  </button>
+                  <button
+                    type="button"
+                    className="nav-scenario-btn"
+                    onClick={handleRenameScenario}
+                    disabled={!hasScenarios}
+                    title="Renomear cenário"
+                    aria-label="Renomear cenário"
+                  >
+                    <FaPen />
+                  </button>
+                  <button
+                    type="button"
+                    className="nav-scenario-btn danger"
+                    onClick={handleDeleteScenario}
+                    disabled={!hasScenarios || scenarios.length <= 1}
+                    title={
+                      !hasScenarios || scenarios.length <= 1
+                        ? "Mantenha pelo menos um cenário"
+                        : "Excluir cenário"
+                    }
+                    aria-label="Excluir cenário"
+                  >
+                    <FaTrashAlt />
+                  </button>
+                </div>
+              </div>
               <select
                 id="nav-scenario"
                 value={selectedScenarioId}
-                onChange={(e) => setCurrentScenarioId(e.target.value || null)}
+                onChange={(e) => {
+                  setCurrentScenarioId(e.target.value || null);
+                  e.target.blur();
+                }}
                 disabled={!hasScenarios}
               >
                 {hasScenarios ? (
@@ -182,60 +245,30 @@ export default function Navbar() {
                   <option value="">Sem cenários</option>
                 )}
               </select>
-
-              <div className="nav-scenario-actions">
-                <button
-                  type="button"
-                  className="nav-scenario-btn"
-                  onClick={handleCreateScenario}
-                  title="Novo cenário"
-                >
-                  <span className="material-icons">add</span>
-                </button>
-                <button
-                  type="button"
-                  className="nav-scenario-btn"
-                  onClick={handleRenameScenario}
-                  disabled={!hasScenarios}
-                  title="Renomear cenário"
-                >
-                  <span className="material-icons">edit</span>
-                </button>
-                <button
-                  type="button"
-                  className="nav-scenario-btn danger"
-                  onClick={handleDeleteScenario}
-                  disabled={!hasScenarios || scenarios.length <= 1}
-                  title={
-                    !hasScenarios || scenarios.length <= 1
-                      ? "Mantenha pelo menos um cenário"
-                      : "Excluir cenário atual"
-                  }
-                >
-                  <span className="material-icons">delete</span>
-                </button>
-              </div>
             </div>
           </div>
 
-          <NavLink to="/" className="nav-btn small nav-user-btn">
-            <span className="nav-icon">
+          <div className="nav-user" title={userName || "Usuário"}>
+            <span className="nav-icon" aria-hidden="true">
               <FaUser />
             </span>
-            <span className="nav-label">{loadingUser ? "Carregando..." : userName || "Usuário"}</span>
-            {!loadingUser && <span className="nav-user-role">{userRole || "Operador"}</span>}
-          </NavLink>
+            <span className="nav-label nav-user-text">
+              <span className="nav-user-name">{loadingUser ? "Carregando…" : userName || "Usuário"}</span>
+              {!loadingUser && <span className="nav-user-role">{userRole || "Operador"}</span>}
+            </span>
+          </div>
+
           <button
             type="button"
-            className="nav-btn small nav-logout-btn"
+            className="nav-btn nav-logout-btn"
             onClick={handleLogout}
             disabled={isLoggingOut}
-            title={isLoggingOut ? "Saindo..." : "Sair"}
+            title={isLoggingOut ? "Saindo…" : "Sair"}
           >
             <span className="nav-icon">
               <FaSignOutAlt />
             </span>
-            <span className="nav-label">{isLoggingOut ? "Saindo..." : "Sair"}</span>
+            <span className="nav-label">{isLoggingOut ? "Saindo…" : "Sair"}</span>
           </button>
         </div>
       </nav>

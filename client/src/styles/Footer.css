@@ -1,0 +1,140 @@
+/* Rodapé das telas autenticadas. Fica abaixo do conteúdo, alinhado com ele
+   (descontando o trilho da barra lateral). */
+
+.app-main {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-main > .home-container {
+  flex: 1;
+  min-height: 0;
+  padding-bottom: 24px;
+}
+
+.app-footer {
+  margin-left: var(--rail);
+  padding: 0 32px 24px;
+}
+
+.app-footer-inner {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 20px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.app-footer p {
+  margin: 0;
+}
+
+.app-footer-brand {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-footer-brand img {
+  flex: none;
+  display: block;
+}
+
+.app-footer-name {
+  font-family: var(--font-cond);
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.app-footer-text {
+  max-width: 52ch;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+.app-footer-divider {
+  align-self: stretch;
+  width: 1px;
+  background: var(--line);
+}
+
+.app-footer-org {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.app-footer-org img {
+  display: block;
+  width: 39px;
+  height: 56px;
+}
+
+.app-footer-org > span > span {
+  display: block;
+}
+
+.app-footer-small {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+
+.app-footer-lab {
+  font-family: var(--font-cond);
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.app-footer-org:hover .app-footer-lab {
+  color: var(--manta);
+}
+
+.app-footer-meta {
+  flex: none;
+  max-width: 260px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+  text-align: right;
+}
+
+@media (max-width: 980px) {
+  .app-footer-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .app-footer-divider {
+    display: none;
+  }
+
+  .app-footer-meta {
+    max-width: none;
+    text-align: left;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-footer {
+    margin-left: 0;
+    padding: 0 14px calc(84px + env(safe-area-inset-bottom));
+  }
+
+  .app-main > .home-container {
+    padding-bottom: 18px;
+  }
+}

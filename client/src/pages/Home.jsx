@@ -304,12 +304,12 @@ function MapCard({ rows, focusKey, onFocusDone }) {
   }, [focusKey, geoCache, rows, loadingKeys, onFocusDone, mapReady]);
 
   const palette = [
-    "#1b5e20",
-    "#2e7d32",
-    "#43a047",
-    "#66bb6a",
-    "#81c784",
-    "#a5d6a7",
+    "#1d4a37",
+    "#2f6b4f",
+    "#4e8a6a",
+    "#7aa88e",
+    "#a3c4b0",
+    "#c7dccf",
   ];
   const styleForKey = (idx) => {
     const c = palette[idx % palette.length];
@@ -351,7 +351,7 @@ function MapCard({ rows, focusKey, onFocusDone }) {
   return (
     <div className={`exp-map-card glow ${isFull ? "is-fullscreen" : ""}`}>
       <div className="map-card-header">
-        <h3>Mapa</h3>
+        <h3>Municípios no mapa</h3>
         <button
           className="btn-secondary map-full-btn"
           onClick={() => setIsFull((v) => !v)}
@@ -363,7 +363,7 @@ function MapCard({ rows, focusKey, onFocusDone }) {
           >
             {isFull ? "fullscreen_exit" : "fullscreen"}
           </span>
-          {isFull ? "Sair" : "Expandir"}
+          {isFull ? "Fechar" : "Tela cheia"}
         </button>
       </div>
 
@@ -638,22 +638,18 @@ export default function Home() {
       0
     );
     if (totalFin === 0) return [];
-    const palette = [
-      "#1b5e20",
-      "#2e7d32",
-      "#43a047",
-      "#66bb6a",
-      "#81c784",
-      "#a5d6a7",
-      "#c8e6c9",
-      "#e8f5e9",
-    ];
+    // Tons do verde escuro ao claro, um por município (sem repetir cor).
+    const from = [0x1d, 0x4a, 0x37];
+    const to = [0xd5, 0xe4, 0xda];
+    const shade = (t) =>
+      `#${from.map((c, k) => Math.round(c + (to[k] - c) * t).toString(16).padStart(2, "0")).join("")}`;
     return rows.map((r, i) => ({
       id: r.nome.replace(/\s*\([A-Z]{2}\)\s*$/, ""),
       value: Number(
         ((toPopNumber(r.series?.[anoFin]) / totalFin) * 100).toFixed(2)
       ),
-      color: palette[i % palette.length],
+      color: shade(rows.length > 1 ? i / (rows.length - 1) : 0),
+      escuro: rows.length > 1 ? i / (rows.length - 1) < 0.45 : true,
     }));
   }, [rows, anoFin]);
 
@@ -688,8 +684,8 @@ export default function Home() {
  <div className={`home-container ${loaded ? "fade-in" : ""}`}>
       <header className="home-header">
         <div>
-          <h1>Estimativa Populacional</h1>
-          <p>Selecione cidades e acompanhe a projeção anual da população por cenário.</p>
+          <h1>População do cenário</h1>
+          <p>Escolha os municípios que enviam resíduo ao aterro. A população de cada um vem das projeções municipais de 2000 a 2060.</p>
         </div>
       </header>
 
@@ -743,7 +739,7 @@ export default function Home() {
             </div>
 
             <div className="exp-field">
-              <label>Ano Inicial</label>
+              <label>Ano inicial</label>
               <div className="select-wrap">
                 <select
                   value={anoIni}
@@ -760,7 +756,7 @@ export default function Home() {
             </div>
 
             <div className="exp-field">
-              <label>Ano Final</label>
+              <label>Ano final</label>
               <div className="select-wrap">
                 <select
                   value={anoFin}
@@ -795,7 +791,7 @@ export default function Home() {
                 >
                   {adding ? "hourglass_top" : "add"}
                 </span>
-                {adding ? "Adicionando..." : "Adicionar"}
+                {adding ? "Adicionando…" : "Adicionar município"}
               </button>
 
               <RemoveButton
@@ -824,9 +820,8 @@ export default function Home() {
       {/* ===== Métricas logo abaixo do mapa ===== */}
       <div className="exp-metrics-row">
         <div className="exp-metric-card glow">
-          <h3>Quantidade de Cidades</h3>
+          <h3>Municípios</h3>
           <div className="exp-mini-content">
-            <span className="material-icons exp-icon">location_city</span>
             <div className="exp-text">
               <h2>{qtdCidades}</h2>
             </div>
@@ -834,24 +829,22 @@ export default function Home() {
         </div>
 
         <div className="exp-metric-card glow">
-          <h3>Crescimento Populacional</h3>
+          <h3>Crescimento da população</h3>
           <div className="exp-mini-content">
-            <span className="material-icons exp-icon">trending_up</span>
             <div className="exp-text">
               <p className="green-text">
                 {anoIni} → {anoFin}
               </p>
-              <h2>{crescimentoPerc.toFixed(2)}%</h2>
+              <h2>{crescimentoPerc.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%</h2>
             </div>
           </div>
         </div>
 
         <div className="exp-metric-card glow">
-          <h3>População Total</h3>
+          <h3>População total</h3>
           <div className="exp-mini-content">
-            <span className="material-icons exp-icon">groups</span>
             <div className="exp-text">
-              <p className="green-text">Ano {anoFin}</p>
+              <p className="green-text">em {anoFin}</p>
               <h2>{totalPopFin.toLocaleString("pt-BR")}</h2>
             </div>
           </div>
@@ -862,8 +855,7 @@ export default function Home() {
         {/* ===== População total por ano (75%) ===== */}
         <div className="card glow exp-line-card">
           <h3>
-            População Total por Ano ({Math.min(anoIni, anoFin)}–
-            {Math.max(anoIni, anoFin)})
+            População total por ano, {Math.min(anoIni, anoFin)}–{Math.max(anoIni, anoFin)}
           </h3>
           <div className="home-line-chart-wrap">
             <ResponsiveContainer width="100%" height="100%">
@@ -875,38 +867,38 @@ export default function Home() {
                     : { top: 12, right: 18, bottom: 30, left: 12 }
                 }
               >
-                <CartesianGrid stroke="#dfe9e3" strokeDasharray="3 3" />
+                <CartesianGrid stroke="#e3e7e3" strokeDasharray="3 3" />
                 <XAxis
                   dataKey="year"
                   type="category"
                   interval={0}
                   ticks={lineTickValues}
-                  tick={{ fill: "#1b3c2e", fontSize: isMobile ? 9 : 11 }}
-                  tickLine={{ stroke: "#dfe9e3" }}
-                  axisLine={{ stroke: "#dfe9e3" }}
+                  tick={{ fill: "#4a5650", fontSize: isMobile ? 9 : 11 }}
+                  tickLine={{ stroke: "#e3e7e3" }}
+                  axisLine={{ stroke: "#e3e7e3" }}
                   height={isMobile ? 36 : 30}
                   label={{
                     value: "Ano",
                     position: "insideBottom",
                     offset: -4,
-                    fill: "#1b3c2e",
-                    fontWeight: 700,
+                    fill: "#4a5650",
+                    fontWeight: 500,
                   }}
                 />
                 <YAxis
                   type="number"
                   domain={["auto", "auto"]}
-                  tick={{ fill: "#1b3c2e", fontSize: isMobile ? 10 : 11 }}
+                  tick={{ fill: "#4a5650", fontSize: isMobile ? 10 : 11 }}
                   tickFormatter={fmtAxis}
-                  tickLine={{ stroke: "#dfe9e3" }}
-                  axisLine={{ stroke: "#dfe9e3" }}
+                  tickLine={{ stroke: "#e3e7e3" }}
+                  axisLine={{ stroke: "#e3e7e3" }}
                   width={isMobile ? 56 : 72}
                   label={{
                     value: "População",
                     angle: -90,
                     position: "insideLeft",
-                    fill: "#1b3c2e",
-                    fontWeight: 700,
+                    fill: "#4a5650",
+                    fontWeight: 500,
                     dx: isMobile ? 0 : -2,
                   }}
                 />
@@ -914,25 +906,25 @@ export default function Home() {
                   formatter={(value) => Number(value).toLocaleString("pt-BR")}
                   labelFormatter={(label) => `Ano ${label}`}
                   contentStyle={{
-                    border: "1px solid #1b5e20",
-                    borderRadius: 8,
-                    color: "#1b5e20",
+                    border: "1px solid #1d4a37",
+                    borderRadius: 4,
+                    color: "#1d4a37",
                   }}
                 />
                 <Area
                   type="linear"
                   dataKey="total"
-                  stroke="#1b5e20"
-                  fill="#1b5e20"
+                  stroke="#1d4a37"
+                  fill="#1d4a37"
                   fillOpacity={0.15}
                   isAnimationActive={false}
                 />
                 <ReLine
                   type="linear"
                   dataKey="total"
-                  stroke="#1b5e20"
+                  stroke="#1d4a37"
                   strokeWidth={3}
-                  dot={lineData.length <= 25 ? { r: 3, fill: "#f5fbf7", stroke: "#1b5e20", strokeWidth: 2 } : false}
+                  dot={lineData.length <= 25 ? { r: 3, fill: "#ffffff", stroke: "#1d4a37", strokeWidth: 2 } : false}
                   activeDot={{ r: 4 }}
                   isAnimationActive={false}
                 />
@@ -943,45 +935,41 @@ export default function Home() {
 
         {/* ===== Pie de distribuição (25%) ===== */}
         <div className="card glow exp-pie-card">
-          <h3>Distribuição Populacional (%) – {anoFin}</h3>
+          <h3>Participação de cada município em {anoFin}</h3>
           <div className="exp-chart-wrapper">
             {pieData.length ? (
               <ResponsivePie
                 data={pieData}
                 margin={isMobile ? { top: 16, right: 16, bottom: 16, left: 16 } : { top: 18, right: 18, bottom: 18, left: 18 }}
                 innerRadius={isMobile ? 0.5 : 0.62}
-                padAngle={1}
-                cornerRadius={4}
+                padAngle={0.6}
+                cornerRadius={2}
                 activeOuterRadiusOffset={6}
                 colors={{ datum: "data.color" }}
-                borderWidth={1}
-                borderColor={{ from: "color", modifiers: [["darker", 0.3]] }}
+                borderWidth={0}
                 enableArcLabels={!isMobile}
                 arcLabelsSkipAngle={18}
-                arcLabelsTextColor={{
-                  from: "color",
-                  modifiers: [["darker", 3]],
-                }}
-                arcLabel={(d) => `${d.value}%`}
+                arcLabelsTextColor={(d) => (d.data.escuro ? "#ffffff" : "#1e2723")}
+                arcLabel={(d) => `${d.value.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`}
                 enableArcLinkLabels={false}
                 tooltip={({ datum }) => (
                   <div
                     style={{
                       padding: "6px 9px",
                       background: "#fff",
-                      border: "1px solid #1b5e20",
-                      borderRadius: 8,
-                      color: "#1b5e20",
-                      fontSize: ".9rem",
-                      fontWeight: 700,
+                      border: "1px solid #d5dbd6",
+                      borderRadius: 4,
+                      color: "#1e2723",
+                      fontSize: ".88rem",
                     }}
                   >
-                    {datum.id}: {datum.value}%
+                    {datum.id}: {datum.value.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%
                   </div>
                 )}
                 theme={{
-                  textColor: "#1b3c2e",
+                  textColor: "#4a5650",
                   fontSize: 12,
+                  text: { fontFamily: "Barlow, 'Segoe UI', sans-serif" },
                 }}
                 animate={false}
                 motionConfig="gentle"
@@ -1069,7 +1057,7 @@ function ExpTable({ rows, anoIni, anoFin }) {
                 />
               </th>
               <th className="col-uf">UF</th>
-              <th className="col-nome">NOME</th>
+              <th className="col-nome">Município</th>
               {cols.map((y) => (
                 <th key={y} className="col-ano">
                   {y}

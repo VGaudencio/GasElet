@@ -168,8 +168,7 @@ namespace {
 
     // Parâmetros da massa anual de RSU (espelha calcRsuTonAno em client/src/utils/rsuProduction.js).
     struct RsuParams {
-        percapita::Metodo metodo = percapita::Metodo::Snis;
-        std::string regiao;            // usada quando o município não tem UF e no método legado
+        std::string regiao;            // usada quando o município não tem UF
         double taxaColetaPct = kDefaultTaxaColetaPct;
         double perCapFallback = kDefaultGeracaoKgAnoHab;
     };
@@ -177,7 +176,6 @@ namespace {
     RsuParams parseRsuParams(const Json::Value& config)
     {
         RsuParams p;
-        p.metodo = percapita::metodoFromString(config.get("metodoPerCapita", "").asString());
         p.regiao = config.get("regiao", "Nordeste").asString();
         p.taxaColetaPct = parseJsonNumber(config["taxaColetaPct"], kDefaultTaxaColetaPct);
         p.perCapFallback = parseJsonNumber(config["geracaoKgAnoHab"], kDefaultGeracaoKgAnoHab);
@@ -186,7 +184,7 @@ namespace {
 
     double perCapKgAnoHab(const RsuParams& p, const std::string& uf, int ano)
     {
-        return percapita::kgAnoHab(p.metodo, uf, p.regiao, ano, p.perCapFallback);
+        return percapita::kgAnoHab(uf, p.regiao, ano, p.perCapFallback);
     }
 
     double calcRsuTonAno(const RsuParams& p, double perCapita, double populacao)
@@ -540,7 +538,6 @@ namespace {
         out["maxYear"] = maxYear;
         out["kMetano"] = kMetano;
         out["metodoFod"] = fodMethodName(metodoFod);
-        out["metodoPerCapita"] = percapita::metodoName(params.metodo);
         out["doc"] = doc;
         out["mcf"] = mcf;
         out["captacaoBiogasPct"] = captacao * 100.0;

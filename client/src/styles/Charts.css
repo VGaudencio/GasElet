@@ -20,17 +20,9 @@
 }
 
 .charts-period-chip {
-  margin: 4px 0 10px;
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border-soft);
-  background: var(--bg-soft);
-  color: var(--text-muted);
-  font-size: 0.88rem;
+  margin: -10px 0 14px;
+  color: var(--ink-2);
+  font-size: 0.9rem;
   max-width: 100%;
 }
 
@@ -80,9 +72,9 @@
 .charts-compare-tag {
   display: inline-flex;
   align-items: center;
-  border: 1px solid var(--border-soft);
-  border-radius: 999px;
-  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
   overflow: hidden;
 }
 
@@ -94,7 +86,7 @@
   border: 0;
   background: transparent;
   color: var(--text-main);
-  padding: 7px 10px;
+  padding: 6px 10px;
   cursor: pointer;
   max-width: 180px;
   overflow: hidden;
@@ -102,18 +94,21 @@
   white-space: nowrap;
 }
 
+.charts-compare-tag-remove:hover {
+  color: var(--danger);
+}
+
 .charts-compare-tag-remove {
   border: 0;
   border-left: 1px solid var(--border-soft);
   background: transparent;
-  color: #b3261e;
-  padding: 7px 9px;
+  color: var(--ink-2);
+  padding: 6px 9px;
   cursor: pointer;
-  font-weight: 700;
 }
 
-.charts-grid {
-  margin-top: 18px;
+.home-grid.charts-grid {
+  margin-top: 16px;
   grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
@@ -132,7 +127,7 @@
 }
 
 .charts-map-card {
-  margin-top: 18px;
+  margin-top: 16px;
 }
 
 .charts-map-card h3 {
@@ -164,18 +159,20 @@
 }
 
 .charts-city-info {
-  border: 1px solid var(--border-map);
   border-radius: var(--radius-md);
-  background: var(--bg-soft);
-  padding: 14px;
+  background: var(--tint);
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .charts-city-info h4 {
   margin: 0;
-  color: var(--text-main);
+  font-size: 0.88rem;
+  font-family: var(--font);
+  font-weight: 500;
+  color: var(--ink-2);
 }
 
 .charts-city-info p {
@@ -190,20 +187,25 @@
 
 .charts-city-name {
   margin: 0;
-  color: var(--primary);
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-family: var(--font-cond);
+  color: var(--ink);
+  font-size: 1.25rem;
+  font-weight: 600;
 }
 
 .charts-city-stat {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
   gap: 10px;
   flex-wrap: wrap;
-  border: 1px solid var(--border-soft);
-  border-radius: 10px;
-  background: #fff;
-  padding: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+
+.charts-city-stat:last-child {
+  border-bottom: 0;
 }
 
 .charts-city-stat span {

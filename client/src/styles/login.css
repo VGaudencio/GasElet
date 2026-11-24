@@ -1,143 +1,157 @@
-
-/* --------------------------------------------------------------
-   File: src/components/eco-login.css (CSS Puro)
-   -------------------------------------------------------------- */
-:root {
-  --eco-bg-1: #0b3d2e; /* verde escuro */
-  --eco-bg-2: #1f8a5b; /* verde médio */
-  --eco-accent: #7de2a7; /* verde claro */
-  --eco-accent-2: #c9f2dd; /* menta suave */
-  --eco-ink: #0d1b16; /* quase preto esverdeado */
-  --eco-ink-soft: #1c2a25;
-  --eco-white: #ffffff;
-  --eco-card: rgba(255, 255, 255, 0.10);
-  --eco-stroke: rgba(255, 255, 255, 0.25);
-  --eco-shadow: 0 10px 30px rgba(0,0,0,.35);
-  --radius-xl: 18px;
-  --radius-md: 12px;
-  --ring: 0 0 0 3px rgba(125, 226, 167, .35);
-}
-
-* { box-sizing: border-box; }
-html, body, #root { height: 100%; }
-html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; background-color: var(--eco-bg-1); color: var(--eco-white); }
+/* Tela de login. Todos os seletores ficam sob .eco-root para não vazar para o resto
+   do app (o CSS é empacotado num arquivo só). */
 
 .eco-root {
-  min-height: 100svh; /* usa viewport pequeno em iOS */
-  min-height: 100dvh; /* viewport dinamico moderno */
-  width: 100%;
-  display: grid; place-items: center; position: relative; overflow: hidden;
-  background: linear-gradient(135deg, var(--eco-bg-1), var(--eco-bg-2));
-  color: var(--eco-white);
-  isolation: isolate; /* evita bleed de backdrop-filter */
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 24px 16px;
+  overflow: hidden;
+  background: #17392b;
+  color: var(--ink);
+  isolation: isolate;
 }
 
-/* Orbes/folhas decorativas */
-.eco-orb { position: absolute; border-radius: 50%; filter: blur(40px); opacity: .25; }
-.eco-orb--1 { width: 420px; height: 420px; background: var(--eco-accent);
-              top: -80px; right: -120px; animation: float 14s ease-in-out infinite; }
-.eco-orb--2 { width: 380px; height: 380px; background: var(--eco-accent-2);
-              bottom: -100px; left: -120px; animation: float 18s ease-in-out infinite reverse; }
-@keyframes float { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-18px) } }
-
-/* SVG folhas de fundo */
-.eco-leaves { position: absolute; inset: 0; pointer-events: none; opacity: .20; }
-.eco-leaves svg { width: 100%; height: 100%; }
+.eco-contours {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  fill: none;
+  stroke: rgba(214, 232, 221, 0.09);
+  stroke-width: 1.2;
+}
 
 .eco-card {
-  width: min(420px, calc(100% - 32px));
-  background: var(--eco-card);
-  backdrop-filter: blur(10px) saturate(120%);
-  -webkit-backdrop-filter: blur(10px) saturate(120%);
-  border: 1px solid var(--eco-stroke);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--eco-shadow);
-  padding: 28px;
-  position: relative;
+  width: min(380px, 100%);
+  padding: 28px 28px 22px;
+  background: var(--panel);
+  border-radius: var(--radius);
+  box-shadow: 0 24px 60px rgba(5, 18, 11, 0.35);
 }
 
-.eco-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-.eco-logo { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, var(--eco-accent), var(--eco-accent-2));
-            display: grid; place-items: center; color: var(--eco-ink); font-weight: 800; }
-.eco-title { margin: 0; font-size: 1.1rem; letter-spacing: .2px; }
-.eco-sub { margin: 4px 0 0; color: #e9fff3; opacity: .85; font-size: .9rem; }
+.eco-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
 
-form { margin-top: 18px; }
-.eco-field { position: relative; margin-top: 16px; }
+.eco-logo {
+  width: 44px;
+  height: 44px;
+  display: block;
+}
+
+.eco-title {
+  margin: 0;
+  font-family: var(--font-cond);
+  font-weight: 600;
+  font-size: 1.6rem;
+  line-height: 1.05;
+  color: var(--ink);
+}
+
+.eco-sub {
+  margin: 3px 0 0;
+  font-size: 0.88rem;
+  color: var(--ink-2);
+}
+
+.eco-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.eco-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.eco-field > span {
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
 .eco-input {
   width: 100%;
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.25);
-  color: var(--eco-white);
-  padding: 14px;
-  border-radius: var(--radius-md);
-  outline: none; transition: box-shadow .15s, border-color .15s, background .2s;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--field-line);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--ink);
   font-size: 16px;
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
 }
-.eco-input:focus { box-shadow: var(--ring); border-color: var(--eco-accent); background: rgba(255,255,255,.12); }
-.eco-input::placeholder { color: #e8fff1; opacity: .65; }
 
-.eco-row { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; gap: 8px; }
-.eco-remember { display: flex; align-items: center; gap: 8px; font-size: .9rem; }
-.eco-remember input { width: 18px; height: 18px; accent-color: var(--eco-accent); }
+.eco-input:focus {
+  border-color: var(--manta);
+  box-shadow: var(--focus);
+}
+
+.eco-input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
 
 .eco-btn {
-  width: 100%; margin-top: 16px; padding: 12px 14px; border-radius: var(--radius-md);
-  border: 1px solid rgba(255,255,255,.25); background: linear-gradient(135deg, var(--eco-accent), var(--eco-accent-2));
-  color: var(--eco-ink); font-weight: 700; cursor: pointer; transition: transform .06s ease, box-shadow .2s;
-  box-shadow: 0 6px 16px rgba(0,0,0,.25);
+  height: 42px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--manta);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.97rem;
+  cursor: pointer;
+  transition: background-color 120ms ease;
 }
-.eco-btn:hover { box-shadow: 0 10px 24px rgba(0,0,0,.3); }
-.eco-btn:active { transform: translateY(1px); }
-.eco-btn[disabled] { opacity: .6; cursor: not-allowed; }
 
-.eco-error { margin-top: 10px; color: #ffd5d5; background: rgba(255, 77, 77, .15);
-             border: 1px solid rgba(255,77,77,.35); padding: 8px 10px; border-radius: 10px; }
-.eco-hint { margin-top: 10px; font-size: .85rem; color: #e6fff2; opacity: .8; }
+.eco-btn:hover:not(:disabled) {
+  background: var(--manta-700);
+}
 
-.eco-footer { margin-top: 18px; display: flex; align-items: center; justify-content: space-between; font-size: .85rem; opacity: .9; }
-.eco-link { color: var(--eco-accent-2); text-decoration: none; border-bottom: 1px dashed rgba(255,255,255,.35); }
-.eco-link:hover { border-bottom-style: solid; }
+.eco-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+}
 
-@media (max-width: 420px){ .eco-footer { flex-direction: column; gap: 8px; } }
+.eco-btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
 
-@media (max-width: 600px) {
-  .eco-root {
-    padding: 20px 12px;
-    align-items: center;
-  }
+.eco-error {
+  margin: 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--danger);
+  background: #fbeceb;
+  color: #7d1c16;
+  font-size: 0.88rem;
+}
 
-  .eco-card {
-    width: 100%;
-    padding: 22px 18px;
-  }
+.eco-footer {
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 0.82rem;
+  color: var(--ink-2);
+}
 
-  .eco-brand {
-    gap: 10px;
-  }
-
-  .eco-title {
-    font-size: 1rem;
-  }
-
-  .eco-sub {
-    font-size: 0.85rem;
-  }
-
-  .eco-input {
-    padding: 14px 12px;
-    font-size: 16px;
-  }
-
-  .eco-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .eco-btn {
-    padding: 14px;
-    font-size: 1rem;
-  }
+.eco-credit {
+  margin: 0;
+  max-width: 380px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: rgba(214, 232, 221, 0.7);
 }
