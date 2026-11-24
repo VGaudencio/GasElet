@@ -18,6 +18,7 @@ e versionamento semântico.
 ### Changed
 
 - reorganização da documentação principal do projeto.
+- README reescrito com banner, capturas de tela (desktop e celular), ícones, modelo de cálculo e arquitetura; imagens em `docs/readme/`.
 - MCF segue a Tabela 3.1 do IPCC 2006 (1,0 / 0,8 / 0,4 / 0,6); rótulos antigos continuam aceitos.
 - captação de biogás (`captacaoBiogasPct`) passa a reduzir o metano disponível para geração (`metanoRecuperadoTAno`).
 - casas atendidas e comparação de geradores usam a energia gerada (limitada pela potência nominal).
